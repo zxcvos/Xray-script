@@ -1,0 +1,16 @@
+{
+  "xray": {
+    "version": "1.8.0",
+    "privateKey": "xray x25519 Private key",
+    "publicKey": "xray x25519 Public key"
+  },
+  "nginx": {
+    "version": "1.22.1",
+    "domain": "example.com"
+  },
+  "cloudreve": {
+    "version": "3.7.1",
+    "username": "admin@cloudreve.org",
+    "password": "12345678"
+  }
+}
