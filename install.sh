@@ -21,6 +21,7 @@ readonly NC='\033[0m'
 
 declare domain
 declare new_ssh_port
+declare is_mainline
 
 function _info() {
     printf "${GREEN}[Info] ${NC}"
@@ -162,7 +163,7 @@ function _read_ssh() {
         echo "当前 ssh 连接端口为: $(sed -En "s/^[#pP].*ort\s*([0-9]*)$/\1/p" /etc/ssh/sshd_config)"
         read -p "请输入新的 ssh 连接端口(1-65535)：" new_ssh_port
         [[ ${new_ssh_port} -lt 1 && ${new_ssh_port} -gt 65535 ]] && continue
-        read -r -p  "请确认域名: \"${new_ssh_port}\" [y/n] " is_ssh_port
+        read -r -p  "请确认端口: \"${new_ssh_port}\" [y/n] " is_ssh_port
     done
 }
 
@@ -202,7 +203,7 @@ function install_nginx_dependencies() {
             wget -O /etc/yum.repos.d/nginx.repo https://raw.githubusercontent.com/zxcvos/Xray-script/main/repo/nginx.repo
             ;;
         debian|ubuntu)
-            [ ${is_mainline} ] && mainline="/mainline"
+            [[ ${is_mainline} =~ ^[Yy]$ ]] && mainline="/mainline"
             [ "debian" -eq "$(_os)" ] && _install_update "debian-archive-keyring" || _install_update "ubuntu-keyring"
             rm -rf /etc/apt/sources.list.d/nginx.list
             curl https://nginx.org/keys/nginx_signing.key | gpg --dearmor \
@@ -231,7 +232,6 @@ function purge_xray() {
     crontab -l | grep -v "/usr/local/etc/xray-script/update-dat.sh >/dev/null 2>&1" | crontab -
     _systemctl "stop" "xray"
     bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ remove --purge
-    rm -rf ${HOME}/xray_x25519
     rm -rf /etc/systemd/system/xray.service
     rm -rf /etc/systemd/system/xray@.service
     rm -rf /usr/local/bin/xray
