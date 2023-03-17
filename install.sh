@@ -468,7 +468,7 @@ function menu() {
     echo -e "----------------------------------------"
     echo -e "${RED}0.${NC} 退出"
     read -rp "Choose: " idx
-    if [[ ! -d /usr/local/etc/xray-script && (${idx} -ne 1 || ${idx} -lt 201) ]]; then
+    if [[ ! -d /usr/local/etc/xray-script && (${idx} -ne 0 && ${idx} -ne 1 && ${idx} -lt 201) ]]; then
         _error "未使用 Xray-script 进行安装"
     fi
     case "${idx}" in
