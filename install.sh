@@ -254,6 +254,7 @@ function purge_nginx() {
     rm -rf /etc/nginx
     rm -rf /etc/systemd/system/nginx.service
     rm -rf /var/log/nginx
+    _systemctl dr
 }
 
 function install_update_cloudreve() {
@@ -489,7 +490,6 @@ function menu() {
                 issue_cert
                 config_xray
                 reset_cloudreve_data
-                _systemctl "start" "cloudreve"
                 show_cloudreve_config
                 show_config
             fi
