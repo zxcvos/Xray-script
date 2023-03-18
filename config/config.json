@@ -3,7 +3,8 @@
     "version": "1.8.0",
     "privateKey": "xray x25519 Private key",
     "publicKey": "xray x25519 Public key",
-    "dest": {
+    "dest": "learn.microsoft.com",
+    "serverNames": {
       "learn.microsoft.com": [
         "learn.microsoft.com",
         "www.learn.microsoft.com"
