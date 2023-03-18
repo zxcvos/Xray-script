@@ -13,6 +13,9 @@
         "www.apple.com",
         "images.apple.com"
       ],
+      "music.apple.com": [
+        "music.apple.com"
+      ],
       "www.fandom.com": [
         "fandom.com",
         "www.fandom.com",
@@ -24,6 +27,10 @@
       "www.lovelive-anime.jp": [
         "lovelive-anime.jp",
         "www.lovelive-anime.jp"
+      ],
+      "tidal.com": [
+        "tidal.com",
+        "www.tidal.com"
       ],
       "zoro.to": [
         "zoro.to",
