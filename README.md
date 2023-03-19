@@ -3,10 +3,17 @@
 * 一个纯 Shell 编写的 REALITY 管理脚本
 * 使用 VLESS-XTLS-uTLS-REALITY 配置
 * 实现 dest 的自选与自填
-* 实现自填 dest 的 spiderX 的自定义，例如：toarumajutsunoindex.fandom.com/wiki/Toaru_Majutsu_no_Index_Wiki 中的 /wiki/Toaru_Majutsu_no_Index_Wiki 会被认定为 spiderX
+* 实现自填 dest 的 spiderX 的自定义，例如：fmovies.to/home
+  ```sh
+  SNI     : fmovies.to
+  SpiderX : /home
+  ```
 * 实现自填 dest 的 TLSv1.3 与 H2 验证
 * 实现自填 dest 的 serverNames 自动获取
-* 实现 serverNames 通配符域名与 CDN SNI 域名的过滤
+* 实现自动获取的 serverNames 通配符域名与 CDN SNI 域名的过滤
+  * dest 可以设置为目标网站的子域名，但如果该域名在 SNI 属于通配符匹配的域名的话，将不会自动进入到 serverNames
+  * 如果需要使用的话请编辑 `/usr/local/etc/xray/config.json` 配置文件
+  * 或者编辑 `/usr/local/etc/xray-script/config.json` 后使用 `104. 修改 dest` 重新选择对应的 dest 实现需求
 * 默认配置禁回国流量、广告、bt
 * 实现 geo 文件的自动更新
 
