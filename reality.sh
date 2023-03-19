@@ -200,7 +200,10 @@ function select_dest() {
         echo -e "-------------------------------------------"
     done
     _info "正在修改配置"
-    pick_dest="${pick_dest}/${domain_path}"
+    [ ${domain_path} ] && pick_dest="${pick_dest}/${domain_path}"
+    if echo ${pick_dest} | grep -q '/$'; then
+        pick_dest=$(echo ${pick_dest} | sed -En 's|/+$||p')
+    fi 
     [ ${sns} ] && jq --argjson sn "{\"${pick_dest}\": ${sns}}" '.xray.serverNames += $sn' /usr/local/etc/xray-script/config.json > /usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray-script/config.json
     jq --arg dest "${pick_dest}" '.xray.dest = $dest' /usr/local/etc/xray-script/config.json > /usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray-script/config.json
 }
