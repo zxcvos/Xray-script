@@ -17,7 +17,7 @@ readonly NC='\033[0m'
 
 declare domain
 declare domain_path
-declare new_ssh_port
+declare new_port
 
 function _info() {
     printf "${GREEN}[信息] ${NC}"
@@ -219,13 +219,17 @@ function read_domain() {
     domain=${check_domain}
 }
 
-function read_ssh() {
-    until [[ ${is_ssh_port} =~ ^[Yy]$ ]]
+function read_port() {
+    local prompt="${1}"
+    until [[ ${is_port} =~ ^[Yy]$ ]]
     do
-        echo "当前 ssh 连接端口为: $(sed -En "s/^[#pP].*ort\s*([0-9]*)$/\1/p" /etc/ssh/sshd_config)"
-        read -p "请输入新的 ssh 连接端口(1-65535)：" new_ssh_port
-        [[ ${new_ssh_port} -lt 1 && ${new_ssh_port} -gt 65535 ]] && continue
-        read -r -p  "请确认端口: \"${new_ssh_port}\" [y/n] " is_ssh_port
+        echo "${prompt}"
+        read -p "请输入自定义的端口(1-65535): " new_port
+        if  ! _is_digit "${new_port}" && [[ ${new_port} -lt 1 || ${new_port} -gt 65535 ]]; then
+            prompt="输入错误, 端口范围是 1-65535 之间的数字"
+            continue
+        fi
+        read -r -p  "请确认端口: \"${new_port}\" [y/n] " is_port
     done
 }
 
@@ -496,8 +500,8 @@ function menu() {
             bash <(wget -qO- https://raw.githubusercontent.com/zxcvos/system-automation-scripts/main/remove-kernel.sh)
         ;;
         203)
-            read_ssh
-            sed -i "s/^[#pP].*ort\s*[0-9]*$/Port ${new_ssh_port}/" /etc/ssh/sshd_config
+            read_port "当前 ssh 连接端口为: $(sed -En "s/^[#pP].*ort\s*([0-9]*)$/\1/p" /etc/ssh/sshd_config)"
+            sed -i "s/^[#pP].*ort\s*[0-9]*$/Port ${new_port}/" /etc/ssh/sshd_config
             systemctl restart sshd
         ;;
         204)
