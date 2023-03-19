@@ -3,7 +3,7 @@
 * 一个纯 Shell 编写的 REALITY 管理脚本
 * 使用 VLESS-XTLS-uTLS-REALITY 配置
 * 实现 dest 的自选与自填
-* 实现自填 dest 的 spiderX 的自定义
+* 实现自填 dest 的 spiderX 的自定义，例如：toarumajutsunoindex.fandom.com/wiki/Toaru_Majutsu_no_Index_Wiki 中的 /wiki/Toaru_Majutsu_no_Index_Wiki 会被认定为 spiderX
 * 实现自填 dest 的 TLSv1.3 与 H2 验证
 * 实现自填 dest 的 serverNames 自动获取
 * 实现 serverNames 通配符域名与 CDN SNI 域名的过滤
@@ -25,6 +25,35 @@
   curl -fsSL -o ${HOME}/Xray-script.sh https://raw.githubusercontent.com/zxcvos/Xray-script/main/reality.sh
   bash ${HOME}/Xray-script.sh
   ```
+
+## 脚本界面
+
+```sh
+--------------- Xray-script ---------------
+ Version      : v2023-03-15(beta)
+ Description  : Xray 管理脚本
+--------------- 装载管理 ---------------
+1. 安装
+2. 更新
+3. 卸载
+--------------- 操作管理 ---------------
+4. 启动
+5. 停止
+6. 重启
+--------------- 配置管理 ---------------
+101. 查看配置
+102. 信息统计
+103. 修改 id
+104. 修改 dest
+105. 修改 x25519 key
+106. 修改 shortIds
+--------------- 其他选项 ---------------
+201. 更新至最新稳定版内核
+202. 卸载多余内核
+203. 修改 ssh 端口
+204. 网络连接优化
+----------------------------------------
+```
 
 ## 客户端配置
 
