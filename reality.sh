@@ -188,7 +188,7 @@ function select_dest() {
             _info "正在获取 Allowed domains"
             pick_dest=${domain}
             all_sns=$(xray tls ping ${pick_dest} | sed -n '/with SNI/,$p' | sed -En 's/\[(.*)\]/\1/p' | sed -En 's/Allowed domains:\s*//p'| jq -R -c 'split(" ")')
-            sns=$(echo ${all_sns} | jq -c 'map(select(test("^[^*]+$"; "g")))')
+            sns=$(echo ${all_sns} | jq 'map(select(test("^[^*]+$"; "g")))' | jq -c 'map(select(test("^((?!cloudflare|akamaized|edgekey|edgesuite|cloudfront|azureedge|msecnd|edgecastcdn|fastly|googleusercontent|kxcdn|maxcdn|stackpathdns|stackpathcdn).)*$"; "ig")))')
             _info "过滤通配符前的 SNI: $(echo ${all_sns[@]})"
             _info "过滤通配符后的 SNI: $(echo ${sns[@]})"
             _info "如果有更多的 serverNames 请在 /usr/local/etc/xray-script/config.json 中自行编辑"
