@@ -16,6 +16,7 @@ readonly YELLOW='\033[1;31;33m'
 readonly NC='\033[0m'
 
 declare domain
+declare domain_path
 declare new_ssh_port
 
 function _info() {
@@ -199,6 +200,7 @@ function select_dest() {
         echo -e "-------------------------------------------"
     done
     _info "正在修改配置"
+    pick_dest="${pick_dest}/${domain_path}"
     [ ${sns} ] && jq --argjson sn "{\"${pick_dest}\": ${sns}}" '.xray.serverNames += $sn' /usr/local/etc/xray-script/config.json > /usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray-script/config.json
     jq --arg dest "${pick_dest}" '.xray.dest = $dest' /usr/local/etc/xray-script/config.json > /usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray-script/config.json
 }
@@ -210,6 +212,7 @@ function read_domain() {
         check_domain=$(echo ${domain} | grep -oE '[^/]+(\.[^/]+)+\b' | head -n 1)
         read -r -p  "请确认域名: \"${check_domain}\" [y/n] " is_domain
     done
+    domain_path=${domain#*/}
     domain=${check_domain}
 }
 
