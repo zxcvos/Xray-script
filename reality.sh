@@ -431,6 +431,7 @@ function menu() {
         ;;
         3)
             purge_xray
+            [ -f /usr/local/etc/xray-script/sysctl.conf.bak ] && mv -f /usr/local/etc/xray-script/sysctl.conf.bak /etc/sysctl.conf && _info "已还原网络连接设置"
             rm -rf /usr/local/etc/xray-script
             _info "已经完成卸载"
         ;;
@@ -539,8 +540,12 @@ function menu() {
             fi
         ;;
         204)
-            wget -O /etc/sysctl.conf https://raw.githubusercontent.com/zxcvos/Xray-script/main/config/sysctl.conf
-            sysctl -p
+            read -r -p "是否选择网络连接优化 [y/n] " is_opt
+            if [[ ${is_opt} =~ ^[Yy]$ ]]; then
+                [ -f /usr/local/etc/xray-script/sysctl.conf.bak ] || cp -af /etc/sysctl.conf /usr/local/etc/xray-script/sysctl.conf.bak
+                wget -O /etc/sysctl.conf https://raw.githubusercontent.com/zxcvos/Xray-script/main/config/sysctl.conf
+                sysctl -p
+            fi
         ;;
         0)
             exit 0
