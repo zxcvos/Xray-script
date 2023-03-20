@@ -6,25 +6,8 @@
 * 实现 dest 的自选与自填
 * 实现自填 dest 的 TLSv1.3 与 H2 验证
 * 实现自填 dest 的 serverNames 自动获取
-* 实现自动获取的 serverNames 通配符域名与 CDN SNI 域名的过滤
-  * dest 可以设置为目标网站的子域名，但如果该域名在 SNI 属于通配符匹配的域名的话，将不会自动进入到 serverNames
-  * 如果需要使用的话请编辑 `/usr/local/etc/xray/config.json` 配置文件
-  * 或者编辑 `/usr/local/etc/xray-script/config.json` 后使用 `104. 修改 dest` 重新选择对应的 dest 实现需求
-* 实现自填 dest 的 spiderX 的自定义，例如：fmovies.to/home
-  ```sh
-  # 该 SpiderX 仅适用于和 dest 一致的 serverName
-  SNI     : fmovies.to
-  SpiderX : /home
-  
-  # 由于通配符原因不适配子域名，可能造成一些问题，例如：toarumajutsunoindex.fandom.com/wiki/Toaru_Majutsu_no_Index_Wiki
-  # 虽然 SpiderX 还是展示了 /wiki/Toaru_Majutsu_no_Index_Wiki
-  SpiderX : /wiki/Toaru_Majutsu_no_Index_Wiki
-  
-  # 但因实现了通配符域名与 CDN SNI 域名的过滤缘故无法将 toarumajutsunoindex.fandom.com 添加到 serverNames 中
-  # 如果 serverName 为 fandom.com 的时候强行使用 /wiki/Toaru_Majutsu_no_Index_Wiki 我也不知道会不会有什么问题
-  # 想要了解请看 REALITY 源码或问一下 @rprx or @nekohasekai or @yuhan6665
-  # 如有需求请编辑 `/usr/local/etc/xray-script/config.json` 后使用 `104. 修改 dest` 重新选择对应的 dest 实现需求
-  ```
+* 实现自动获取的 serverNames 通配符域名与 CDN SNI 域名的过滤，dest 如果是子域名将会自动加入到 serverNames 中
+* 实现自填 dest 的 spiderX 的自定义显示，例如：自填 dest 为 `fmovies.to/home` 时，client config 会显示 `spiderX: /home`
 * 默认配置禁回国流量、广告、bt
 * 实现 geo 文件的自动更新
 
