@@ -208,7 +208,7 @@ function select_dest() {
     echo -e "-------------------------------------------"
   done
   _info "正在修改配置"
-  [ "${domain_path}" != "" ] && pick_dest="${pick_dest}/${domain_path}"
+  [ "${domain_path}" != "" ] && pick_dest="${pick_dest}${domain_path}"
   if echo ${pick_dest} | grep -q '/$'; then
     pick_dest=$(echo ${pick_dest} | sed -En 's|/+$||p')
   fi
@@ -222,7 +222,7 @@ function read_domain() {
     check_domain=$(echo ${domain} | grep -oE '[^/]+(\.[^/]+)+\b' | head -n 1)
     read -r -p "请确认域名: \"${check_domain}\" [y/n] " is_domain
   done
-  domain_path=${domain#*/}
+  domain_path=$(echo "${domain}" | sed -En "s|.*${check_domain}(/.*)?|\1|p")
   domain=${check_domain}
 }
 
@@ -357,7 +357,7 @@ function show_config() {
   local xs_serverNames=$(echo ${xs_inbound} | jq '.streamSettings.realitySettings.serverNames[]' | tr '\n' ',')
   local xs_shortIds=$(echo ${xs_inbound} | jq '.streamSettings.realitySettings.shortIds[]' | tr '\n' ',')
   local xs_spiderX=$(jq '.xray.dest' /usr/local/etc/xray-script/config.json)
-  [ "${xs_spiderX}" == "${xs_spiderX##*/}" ] && xs_spiderX='"/"' || xs_spiderX="\"/${xs_spiderX##*/}"
+  [ "${xs_spiderX}" == "${xs_spiderX##*/}" ] && xs_spiderX='"/"' || xs_spiderX="\"/${xs_spiderX#*/}"
   echo -e "-------------- client config --------------"
   echo -e "address     : \"${IPv4}\""
   echo -e "port        : ${xs_port}"
