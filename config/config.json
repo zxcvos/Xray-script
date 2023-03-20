@@ -1,6 +1,7 @@
 {
   "xray": {
     "version": "1.8.0",
+    "port": 443,
     "privateKey": "xray x25519 Private key",
     "publicKey": "xray x25519 Public key",
     "dest": "learn.microsoft.com",
