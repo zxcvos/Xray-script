@@ -225,7 +225,7 @@ function read_port() {
     do
         echo "${prompt}"
         read -p "请输入自定义的端口(1-65535): " new_port
-        if  ! _is_digit "${new_port}" && [[ ${new_port} -lt 1 || ${new_port} -gt 65535 ]]; then
+        if  ! _is_digit "${new_port}" || [[ ${new_port} -lt 1 || ${new_port} -gt 65535 ]]; then
             prompt="输入错误, 端口范围是 1-65535 之间的数字"
             continue
         fi
