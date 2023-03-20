@@ -15,9 +15,9 @@ readonly GREEN='\033[1;31;32m'
 readonly YELLOW='\033[1;31;33m'
 readonly NC='\033[0m'
 
-declare domain
-declare domain_path
-declare new_port
+declare domain=''
+declare domain_path=''
+declare new_port=''
 
 function _info() {
   printf "${GREEN}[信息] ${NC}"
