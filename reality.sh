@@ -414,7 +414,7 @@ function menu() {
     if [ ! -d /usr/local/etc/xray-script ]; then
       mkdir -p /usr/local/etc/xray-script
       wget -O /usr/local/etc/xray-script/config.json https://raw.githubusercontent.com/zxcvos/Xray-script/main/config/config.json
-      local xs_port=$(jq '.inbounds[] | select(.tag == "xray-script-xtls-reality") | .port' /usr/local/etc/xray/config.json)
+      local xs_port=$(jq '.xray.port' /usr/local/etc/xray-script/config.json)
       read_port "xray config 配置默认使用: ${xs_port}" "${xs_port}"
       select_dest
       install_dependencies
