@@ -162,6 +162,14 @@ function _systemctl() {
   esac
 }
 
+function _print_list() {
+  local p_list=($@)
+  for ((i = 1; i <= ${#p_list[@]}; i++)); do
+    hint="${p_list[$i - 1]}"
+    echo -e "${GREEN}${i}${NC}) ${hint}"
+  done
+}
+
 function select_dest() {
   local dest_list=($(jq '.xray.serverNames | keys_unsorted' /usr/local/etc/xray-script/config.json | grep -Eoi '".*"' | sed -En 's|"(.*)"|\1|p'))
   local cur_dest=$(jq -r '.xray.dest' /usr/local/etc/xray-script/config.json)
@@ -171,17 +179,14 @@ function select_dest() {
   local prompt="请选择你的 dest, 当前默认使用 \"${cur_dest}\", 自填选 0: "
   until [[ ${is_dest} =~ ^[Yy]$ ]]; do
     echo -e "---------------- dest 列表 -----------------"
-    for ((i = 1; i <= ${#dest_list[@]}; i++)); do
-      hint="${dest_list[$i - 1]}"
-      echo -e "${GREEN}${i}${NC}) ${hint}"
-    done
+    _print_list ${dest_list[@]}
     read -p "${prompt}" pick
     if [[ "${pick}" == "" && "${cur_dest}" != "" ]]; then
       pick_dest=${cur_dest}
       break
     fi
-    if ! _is_digit "${pick}" && [[ "${pick}" -lt 0 || "${pick}" -gt ${#dest_list[@]} ]]; then
-      prompt="输入错误, 请输入 0-${#dest_list[@]} 之间的数字"
+    if ! _is_digit "${pick}" || [[ "${pick}" -lt 0 || "${pick}" -gt ${#dest_list[@]} ]]; then
+      prompt="输入错误, 请输入 0-${#dest_list[@]} 之间的数字: "
       continue
     fi
     if [[ "${pick}" == "0" ]]; then
@@ -198,13 +203,16 @@ function select_dest() {
       pick_dest=${domain}
       all_sns=$(xray tls ping ${pick_dest} | sed -n '/with SNI/,$p' | sed -En 's/\[(.*)\]/\1/p' | sed -En 's/Allowed domains:\s*//p' | jq -R -c 'split(" ")')
       sns=$(echo ${all_sns} | jq 'map(select(test("^[^*]+$"; "g")))' | jq -c 'map(select(test("^((?!cloudflare|akamaized|edgekey|edgesuite|cloudfront|azureedge|msecnd|edgecastcdn|fastly|googleusercontent|kxcdn|maxcdn|stackpathdns|stackpathcdn).)*$"; "ig")))')
-      _info "过滤通配符前的 SNI: $(echo ${all_sns[@]})"
-      _info "过滤通配符后的 SNI: $(echo ${sns[@]})"
+      _info "过滤通配符前的 SNI"
+      _print_list $(echo ${all_sns} | jq -r '.[]')
+      _info "过滤通配符后的 SNI"
+      _print_list $(echo ${sns} | jq -r '.[]')
       _info "如果有更多的 serverNames 请在 /usr/local/etc/xray-script/config.json 中自行编辑"
     else
       pick_dest="${dest_list[${pick} - 1]}"
     fi
     read -r -p "是否使用 dest: \"${pick_dest}\" [y/n] " is_dest
+    prompt="请选择你的 dest, 当前默认使用 \"${cur_dest}\", 自填选 0: "
     echo -e "-------------------------------------------"
   done
   _info "正在修改配置"
