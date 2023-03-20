@@ -200,11 +200,11 @@ function select_dest() {
         echo -e "-------------------------------------------"
     done
     _info "正在修改配置"
-    [ ${domain_path} ] && pick_dest="${pick_dest}/${domain_path}"
+    [ "${domain_path}" != "" ] && pick_dest="${pick_dest}/${domain_path}"
     if echo ${pick_dest} | grep -q '/$'; then
         pick_dest=$(echo ${pick_dest} | sed -En 's|/+$||p')
     fi 
-    [ ${sns} ] && jq --argjson sn "{\"${pick_dest}\": ${sns}}" '.xray.serverNames += $sn' /usr/local/etc/xray-script/config.json > /usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray-script/config.json
+    [ "${sns}" != "" ] && jq --argjson sn "{\"${pick_dest}\": ${sns}}" '.xray.serverNames += $sn' /usr/local/etc/xray-script/config.json > /usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray-script/config.json
     jq --arg dest "${pick_dest}" '.xray.dest = $dest' /usr/local/etc/xray-script/config.json > /usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray-script/config.json
 }
 
@@ -221,10 +221,15 @@ function read_domain() {
 
 function read_port() {
     local prompt="${1}"
+    local cur_port="${2}"
     until [[ ${is_port} =~ ^[Yy]$ ]]
     do
         echo "${prompt}"
         read -p "请输入自定义的端口(1-65535): " new_port
+        if [[ "${new_port}" == "" || ${new_port} -eq ${cur_port} ]]; then
+            _info "取消修改，继续使用原端口: ${cur_port}"
+            break
+        fi
         if  ! _is_digit "${new_port}" || [[ ${new_port} -lt 1 || ${new_port} -gt 65535 ]]; then
             prompt="输入错误, 端口范围是 1-65535 之间的数字"
             continue
@@ -404,7 +409,7 @@ function menu() {
         2)
             local current_xray_version="$(jq -r '.xray.version' /usr/local/etc/xray-script/config.json)"
             local latest_xray_version="$(wget -qO- --no-check-certificate https://api.github.com/repos/XTLS/Xray-core/releases | jq -r '.[0].tag_name ' | cut -d v -f 2)"
-            if [ ${latest_xray_version} != ${current_xray_version} ] && _version_ge ${latest_xray_version} ${current_xray_version} ; then
+            if [ "${latest_xray_version}" != "${current_xray_version}" ] && _version_ge "${latest_xray_version}" "${current_xray_version}"; then
                 install_update_xray
             fi
         ;;
@@ -500,9 +505,13 @@ function menu() {
             bash <(wget -qO- https://raw.githubusercontent.com/zxcvos/system-automation-scripts/main/remove-kernel.sh)
         ;;
         203)
-            read_port "当前 ssh 连接端口为: $(sed -En "s/^[#pP].*ort\s*([0-9]*)$/\1/p" /etc/ssh/sshd_config)"
-            sed -i "s/^[#pP].*ort\s*[0-9]*$/Port ${new_port}/" /etc/ssh/sshd_config
-            systemctl restart sshd
+            local ssh_port=$(sed -En "s/^[#pP].*ort\s*([0-9]*)$/\1/p" /etc/ssh/sshd_config)
+            read_port "当前 ssh 连接端口为: ${ssh_port}" "${ssh_port}"
+            if [[ "${new_port}" && ${new_port} -ne ${ssh_port} ]]; then
+                sed -i "s/^[#pP].*ort\s*[0-9]*$/Port ${new_port}/" /etc/ssh/sshd_config
+                systemctl restart sshd
+                _info "当前 ssh 连接端口已修改为: ${new_port}"
+            fi
         ;;
         204)
             wget -O /etc/sysctl.conf https://raw.githubusercontent.com/zxcvos/Xray-script/main/config/sysctl.conf
