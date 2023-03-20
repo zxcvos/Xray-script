@@ -128,26 +128,35 @@ function _systemctl() {
     local server_name="$2"
     case "${cmd}" in
         start)
+            _info "正在启动 ${server_name} 服务"
             systemctl -q is-active ${server_name} || systemctl -q start ${server_name}
             systemctl -q is-enabled ${server_name} || systemctl -q enable ${server_name}
             sleep 2
+            systemctl -q is-active ${server_name} && _info "已启动 ${server_name} 服务"
         ;;
         stop)
+            _info "正在暂停 ${server_name} 服务"
             systemctl -q is-active ${server_name} && systemctl -q stop ${server_name}
             systemctl -q is-enabled ${server_name} && systemctl -q disable ${server_name}
             sleep 2
+            systemctl -q is-active ${server_name} || _info "已暂停 ${server_name} 服务"
         ;;
         restart)
+            _info "正在重启 ${server_name} 服务"
             systemctl -q is-active ${server_name} && systemctl -q restart ${server_name} || systemctl -q start ${server_name}
             systemctl -q is-enabled ${server_name} || systemctl -q enable ${server_name}
             sleep 2
+            systemctl -q is-active ${server_name} && _info "已重启 ${server_name} 服务"
         ;;
         reload)
+            _info "正在重载 ${server_name} 服务"
             systemctl -q is-active ${server_name} && systemctl -q reload ${server_name} || systemctl -q start ${server_name}
             systemctl -q is-enabled ${server_name} || systemctl -q enable ${server_name}
             sleep 2
+            systemctl -q is-active ${server_name} && _info "已重载 ${server_name} 服务"
         ;;
         dr)
+            _info "正在重载 systemd 配置文件"
             systemctl daemon-reload
         ;;
     esac
@@ -257,6 +266,7 @@ function check_os() {
 }
 
 function install_dependencies() {
+    _info "正在下载相关依赖"
     _install_update "ca-certificates openssl lsb-release curl wget jq tzdata"
     case "$(_os)" in
         centos)
@@ -269,7 +279,7 @@ function install_dependencies() {
 }
 
 function install_update_xray() {
-    _info "installing or updating Xray..."
+    _info "正在安装或更新 Xray"
     _error_detect 'bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install -u root --beta'
     jq --arg ver "$(xray version | head -n 1 | cut -d \( -f 1 | grep -Eoi '[0-9.]*')" '.xray.version = $ver' /usr/local/etc/xray-script/config.json > /usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray-script/config.json
     wget -O /usr/local/etc/xray-script/update-dat.sh https://raw.githubusercontent.com/zxcvos/Xray-script/main/tool/update-dat.sh
@@ -279,7 +289,7 @@ function install_update_xray() {
 }
 
 function purge_xray() {
-    _info "removing Xray..."
+    _info "正在卸载 Xray"
     crontab -l | grep -v "/usr/local/etc/xray-script/update-dat.sh >/dev/null 2>&1" | crontab -
     _systemctl "stop" "xray"
     bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ remove --purge
@@ -292,12 +302,14 @@ function purge_xray() {
 }
 
 function service_xray() {
+    _info "正在配置 xray.service"
     wget -O ${HOME}/xray.service https://raw.githubusercontent.com/zxcvos/Xray-script/main/service/xray.service
     mv -f ${HOME}/xray.service /etc/systemd/system/xray.service
     _systemctl dr
 }
 
 function config_xray() {
+    _info "正在配置 xray config.json"
     wget -O ${HOME}/config.json https://raw.githubusercontent.com/zxcvos/Xray-script/main/VLESS-XTLS-uTLS-REALITY/server.json
     local xray_x25519=$(xray x25519)
     local private_key=$(echo ${xray_x25519} | awk '{print $3}')
@@ -407,15 +419,20 @@ function menu() {
             fi
         ;;
         2)
+            _info "判断 Xray 是否用新版本"
             local current_xray_version="$(jq -r '.xray.version' /usr/local/etc/xray-script/config.json)"
             local latest_xray_version="$(wget -qO- --no-check-certificate https://api.github.com/repos/XTLS/Xray-core/releases | jq -r '.[0].tag_name ' | cut -d v -f 2)"
             if [ "${latest_xray_version}" != "${current_xray_version}" ] && _version_ge "${latest_xray_version}" "${current_xray_version}"; then
+                _info "检测到有新版可用"
                 install_update_xray
+            else
+                _info "当前已是最新版本: ${current_xray_version}"
             fi
         ;;
         3)
             purge_xray
             rm -rf /usr/local/etc/xray-script
+            _info "已经完成卸载"
         ;;
         4)
             _systemctl "start" "xray"
@@ -434,6 +451,7 @@ function menu() {
             bash /usr/local/etc/xray-script/traffic.sh
         ;;
         103)
+            _info "正在修改用户 id"
             local inbound=$(jq '.inbounds[] | select(.tag == "xray-script-xtls-reality")' /usr/local/etc/xray/config.json)
             # Xray-core config.json
             # id
@@ -445,10 +463,12 @@ function menu() {
             inbound=$(echo "${inbound}" | jq -c '.')
             local inbounds=$(jq -c --argjson inbound ${inbound} '.inbounds | map(if .tag == "xray-script-xtls-reality" then . = $inbound else . end)' /usr/local/etc/xray/config.json)
             jq --argjson inbounds ${inbounds} '.inbounds = $inbounds' /usr/local/etc/xray/config.json > /usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray/config.json
+            _info "已成功修改用户 id"
             _systemctl "restart" "xray"
             show_config
         ;;
         104)
+            _info "正在修改 dest 与 serverNames"
             select_dest
             local inbound=$(jq '.inbounds[] | select(.tag == "xray-script-xtls-reality")' /usr/local/etc/xray/config.json)
             local dest=$(jq -r '.xray.dest' /usr/local/etc/xray-script/config.json)
@@ -461,10 +481,12 @@ function menu() {
             inbound=$(echo "${inbound}" | jq -c '.')
             local inbounds=$(jq -c --argjson inbound ${inbound} '.inbounds | map(if .tag == "xray-script-xtls-reality" then . = $inbound else . end)' /usr/local/etc/xray/config.json)
             jq --argjson inbounds ${inbounds} '.inbounds = $inbounds' /usr/local/etc/xray/config.json > /usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray/config.json
+            _info "已成功修改 dest 与 serverNames"
             _systemctl "restart" "xray"
             show_config
         ;;
         105)
+            _info "正在修改 x25519 key"
             local xray_x25519=$(xray x25519)
             local private_key=$(echo ${xray_x25519} | awk '{print $3}')
             local public_key=$(echo ${xray_x25519} | awk '{print $6}')
@@ -478,10 +500,12 @@ function menu() {
             inbound=$(echo "${inbound}" | jq -c '.')
             local inbounds=$(jq -c --argjson inbound ${inbound} '.inbounds | map(if .tag == "xray-script-xtls-reality" then . = $inbound else . end)' /usr/local/etc/xray/config.json)
             jq --argjson inbounds ${inbounds} '.inbounds = $inbounds' /usr/local/etc/xray/config.json > /usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray/config.json
+            _info "已成功修改 x25519 key"
             _systemctl "restart" "xray"
             show_config
         ;;
         106)
+            _info "正在修改 shortIds"
             local inbound=$(jq '.inbounds[] | select(.tag == "xray-script-xtls-reality")' /usr/local/etc/xray/config.json)
             # Xray-core config.json
             # shortIds
@@ -495,6 +519,7 @@ function menu() {
             inbound=$(echo "${inbound}" | jq -c '.')
             local inbounds=$(jq -c --argjson inbound ${inbound} '.inbounds | map(if .tag == "xray-script-xtls-reality" then . = $inbound else . end)' /usr/local/etc/xray/config.json)
             jq --argjson inbounds ${inbounds} '.inbounds = $inbounds' /usr/local/etc/xray/config.json > /usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray/config.json
+            _info "已成功修改 shortIds"
             _systemctl "restart" "xray"
             show_config
         ;;
