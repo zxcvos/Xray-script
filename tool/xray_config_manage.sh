@@ -55,7 +55,7 @@ done
 
 function is_digit() {
   local input=${1}
-  if [[ "$input" =~ ^[0-9]+$ ]]; then
+  if [[ "${input}" =~ ^[0-9]+$ ]]; then
     return 0
   else
     return 1
@@ -64,7 +64,7 @@ function is_digit() {
 
 function is_UDS() {
   local input=${1}
-  if echo "$input" | grep -Eq "^(\/[a-zA-Z0-9\_\-\+\.]+)*\/[a-zA-Z0-9\_\-\+]+\.sock$" ; then
+  if echo "${input}" | grep -Eq "^(\/[a-zA-Z0-9\_\-\+\.]+)*\/[a-zA-Z0-9\_\-\+]+\.sock$"; then
     return 0
   else
     return 1
@@ -74,7 +74,11 @@ function is_UDS() {
 function set_port() {
   local in_tag="${1}"
   local in_port="${2}"
-  jq --arg in_tag "${in_tag}" --arg in_port "${in_port}" '.inbounds |= map(if .tag == $in_tag then .port = $in_port else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+  if (is_digit "${in_port}" && [ ${in_port} -gt 0 ] && [ ${in_port} -lt 65536 ]) || is_UDS "${in_port}"; then
+    jq --arg in_tag "${in_tag}" --arg in_port "${in_port}" '.inbounds |= map(if .tag == $in_tag then .port = $in_port else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+  else
+    echo "Error: Please enter a valid port number between 1-65535, or a valid UDS file path"
+  fi
 }
 
 function set_proto() {
