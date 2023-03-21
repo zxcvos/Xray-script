@@ -4,7 +4,7 @@
 # This script is used to manage xray configuration
 #
 # Usage:
-#   ./script.sh [-t TAG] [-e EMAIL] [-p PORT] [-prcl PROTOCOL]
+#   ./script.sh [-t TAG] [-e EMAIL] [-p [PORT]] [-prcl [PROTOCOL]]
 #
 # Options:
 #   -h, --help           Display help message.
@@ -20,7 +20,9 @@
 
 declare configPath='/usr/local/etc/xray/config.json'
 declare matchTag='xray-script-xtls-reality'
+declare isSetPort=0
 declare setPort=443
+declare isSetProto=0
 declare setProto='vless'
 declare matchEmail='vless@xtls.reality'
 
@@ -34,15 +36,13 @@ while [[ $# -ge 1 ]]; do
     ;;
   -p | --port)
     shift
-    [ "$1" ] || (echo 'Error: port not provided' && exit 1)
-    setPort="$1"
-    shift
+    isSetPort=1
+    [ "$1" ] && setPort="$1" && shift
     ;;
   -prcl | --protocol)
     shift
-    [ "$1" ] || (echo 'Error: protocol not provided' && exit 1)
-    setProto="$1"
-    shift
+    isSetProto=1
+    [ "$1" ] && setProto="$1" && shift
     ;;
   -e | --email)
     shift
@@ -52,6 +52,24 @@ while [[ $# -ge 1 ]]; do
     ;;
   esac
 done
+
+function is_digit() {
+  local input=${1}
+  if [[ "$input" =~ ^[0-9]+$ ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+function is_UDS() {
+  local input=${1}
+  if echo "$input" | grep -Eq "^(\/[a-zA-Z0-9\_\-\+\.]+)*\/[a-zA-Z0-9\_\-\+]+\.sock$" ; then
+    return 0
+  else
+    return 1
+  fi
+}
 
 function set_port() {
   local in_tag="${1}"
