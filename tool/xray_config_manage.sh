@@ -52,3 +52,9 @@ while [[ $# -ge 1 ]]; do
     ;;
   esac
 done
+
+function set_port() {
+  local in_tag="${1}"
+  local in_port="${2}"
+  jq --arg in_tag "${in_tag}" --arg in_port "${in_port}" '.inbounds |= map(if .tag == $in_tag then .port = $in_port else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+}
