@@ -58,3 +58,9 @@ function set_port() {
   local in_port="${2}"
   jq --arg in_tag "${in_tag}" --arg in_port "${in_port}" '.inbounds |= map(if .tag == $in_tag then .port = $in_port else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
 }
+
+function set_proto() {
+  local in_tag="${1}"
+  local in_proto="${2}"
+  jq --arg in_tag "${in_tag}" --arg in_proto "${in_proto}" '.inbounds |= map(if .tag == $in_tag then .protocol = $in_proto else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+}
