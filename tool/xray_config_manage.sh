@@ -3,6 +3,15 @@
 
 # This script is used to manage xray configuration
 #
+# Usage:
+#   ./script.sh [-t TAG] [-e EMAIL] [-p PORT] [-prcl PROTOCOL]
+#
+# Options:
+#   -h, --help           Display help message.
+#   -t, --tag            The inbounds match tag. default: xray-script-xtls-reality
+#   -p, --port           Set port, default: 443
+#   -prcl, --protocol    Set protocol, default: vless
+#
 # Dependencies: [jq]
 #
 # Author: zxcvos
