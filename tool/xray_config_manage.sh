@@ -78,7 +78,7 @@ while [[ $# -ge 1 ]]; do
 done
 
 function is_digit() {
-  local input=${1}
+  local input="${1}"
   if [[ "${input}" =~ ^[0-9]+$ ]]; then
     return 0
   else
@@ -86,11 +86,44 @@ function is_digit() {
   fi
 }
 
-function is_UDS() {
-  local input=${1}
-  if echo "${input}" | grep -Eq "^(\/[a-zA-Z0-9\_\-\+\.]+)*\/[a-zA-Z0-9\_\-\+]+\.sock$" || echo "${input}" | grep -Eq "^@{1,2}[a-zA-Z0-9\_\-\+\.]+$" ; then
+function is_valid_IPv4_address() {
+  local ip_regex='^((2(5[0-5]|[0-4][0-9]))|[0-1]?[0-9]{1,2})(\.((2(5[0-5]|[0-4][0-9]))|[0-1]?[0-9]{1,2})){3}$'
+  local IPv4="${1}"
+  if [[ ! "${IPv4}" =~ ${ip_regex} ]]; then
+    echo "Invalid IPv4 address format: ${IPv4}"
+    return 1
+  fi
+  IFS='.' read -ra fields <<<"${IPv4}"
+  for field in "${fields[@]}"; do
+    if ((field > 255)); then
+      echo "Invalid IPv4 address: ${IPv4} (field $field is out of range)"
+      return 1
+    fi
+  done
+  if ((${#fields[@]} != 4)); then
+    echo "Invalid IPv4 address: ${IPv4} (does not contain 4 fields)"
+    return 1
+  fi
+  return 0
+}
+
+function is_valid_IPv6_address() {
+  local ip_regex='^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$'
+  local IPv6="${1}"
+  if [[ "${IPv6}" =~ ${ip_regex} ]]; then
     return 0
   else
+    echo "Invalid IPv6 address format: ${IPv6}"
+    return 1
+  fi
+}
+
+function is_UDS() {
+  local input="${1}"
+  if echo "${input}" | grep -Eq "^(\/[a-zA-Z0-9\_\-\+\.]+)*\/[a-zA-Z0-9\_\-\+]+\.sock$" || echo "${input}" | grep -Eq "^@{1,2}[a-zA-Z0-9\_\-\+\.]+$"; then
+    return 0
+  else
+    echo "Error: Please enter a valid UDS file path, or a valid abstract socket"
     return 1
   fi
 }
