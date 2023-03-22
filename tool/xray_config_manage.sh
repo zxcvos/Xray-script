@@ -32,6 +32,7 @@ declare resetUUID=''
 declare isPickNetwork=0
 declare pickNetwork=0
 declare setDest=''
+declare setServerNames=''
 
 while [[ $# -ge 1 ]]; do
   case "${1}" in
@@ -92,6 +93,12 @@ while [[ $# -ge 1 ]]; do
     shift
     (printf "%s" "${1}" | grep -Eq "${op_regex}" || [ -z "$1" ]) && echo 'Error: dest not provided' && exit 1
     setDest="$1"
+    shift
+    ;;
+  -sn | --server-names)
+    shift
+    (printf "%s" "${1}" | grep -Eq "${op_regex}" || [ -z "$1" ]) && echo 'Error: server names not provided' && exit 1
+    setServerNames="$1"
     shift
     ;;
   esac
