@@ -233,3 +233,9 @@ function set_server_names() {
   jq --arg in_tag "${in_tag}" --argjson sns "${sns_list}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.serverNames = [] else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
   jq --arg in_tag "${in_tag}" --argjson sns "${sns_list}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.serverNames = $sns else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
 }
+
+function reset_x25519() {
+  local in_tag="${1}"
+  local private_key="${2}"
+  jq --arg in_tag "${in_tag}" --arg private_key "${private_key}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.privateKey = $private_key else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+}
