@@ -34,6 +34,7 @@ declare pickNetwork=0
 declare setDest=''
 declare setServerNames=''
 declare x25519PrivateKey=''
+declare isResetShortIds=0
 
 while [[ $# -ge 1 ]]; do
   case "${1}" in
@@ -107,6 +108,10 @@ while [[ $# -ge 1 ]]; do
     (printf "%s" "${1}" | grep -Eq "${op_regex}" || [ -z "$1" ]) && echo 'Error: x25519 private key not provided' && exit 1
     x25519PrivateKey="$1"
     shift
+    ;;
+  -sid | --shortIds)
+    shift
+    isResetShortIds=1
     ;;
   esac
 done
