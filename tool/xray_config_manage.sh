@@ -202,3 +202,12 @@ function select_network() {
     ;;
   esac
 }
+
+function set_dest() {
+  local in_tag="${1}"
+  local dest="${2}"
+  if ! is_UDS "${dest}" && [ "${dest}" == "${dest%%:*}" ]; then
+    dest="${dest}:443"
+  fi
+  jq --arg in_tag "${in_tag}" --arg dest "${dest}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.dest = $dest else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+}
