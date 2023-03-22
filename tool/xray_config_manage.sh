@@ -17,7 +17,7 @@
 # Version: 0.1
 # Date: 2023-03-21
 
-readonly op_regex='(^-{2}(help|tag|port|protocol|email|uuid|network|dest|server-names|x25519|shortIds)$)|(^-{1}(prcl|sn|sid|[htpeundx])$)'
+readonly op_regex='^(^--(help|tag|listen|port|protocol|email|uuid|network|dest|server-names|x25519|shortIds)$)|(^-(prcl|sn|sid|[htpeundxl])$)$'
 declare configPath='/usr/local/etc/xray/config.json'
 declare matchTag='xray-script-xtls-reality'
 declare isSetListen=0
@@ -36,7 +36,7 @@ while [[ $# -ge 1 ]]; do
   case "${1}" in
   -t | --tag)
     shift
-    [ "$1" ] || (echo 'Error: tag not provided' && exit 1)
+    (printf "%s" "${1}" | grep -Eq "${op_regex}" || [ -z "$1" ]) && echo 'Error: tag not provided' && exit 1
     matchTag="$1"
     shift
     ;;
@@ -66,7 +66,7 @@ while [[ $# -ge 1 ]]; do
     ;;
   -e | --email)
     shift
-    [ "$1" ] || (echo 'Error: email not provided' && exit 1)
+    (printf "%s" "${1}" | grep -Eq "${op_regex}" || [ -z "$1" ]) && echo 'Error: email not provided' && exit 1
     matchEmail="$1"
     shift
     ;;
