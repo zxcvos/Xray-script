@@ -98,10 +98,10 @@ function is_UDS() {
 function set_port() {
   local in_tag="${1}"
   local in_port="${2}"
-  if (is_digit "${in_port}" && [ ${in_port} -gt 0 ] && [ ${in_port} -lt 65536 ]) || is_UDS "${in_port}"; then
+  if is_digit "${in_port}" && [ ${in_port} -gt 0 ] && [ ${in_port} -lt 65536 ]; then
     jq --arg in_tag "${in_tag}" --arg in_port "${in_port}" '.inbounds |= map(if .tag == $in_tag then .port = $in_port else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
   else
-    echo "Error: Please enter a valid port number between 1-65535, or a valid UDS file path"
+    echo "Error: Please enter a valid port number between 1-65535"
   fi
 }
 
