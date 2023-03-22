@@ -1,4 +1,3 @@
-
 #!/usr/bin/env bash
 
 # This script is used to manage xray configuration
@@ -27,6 +26,8 @@ declare setProto='vless'
 declare matchEmail='vless@xtls.reality'
 declare isResetUUID=0
 declare resetUUID=''
+declare isPickNetwork=0
+declare pickNetwork=1
 
 while [[ $# -ge 1 ]]; do
   case $1 in
@@ -56,6 +57,15 @@ while [[ $# -ge 1 ]]; do
     shift
     isResetUUID=1
     [ "$1" ] && resetUUID="$1" && shift
+    ;;
+  -n | --network)
+    shift
+    isPickNetwork=1
+    if [ "$1" ]; then
+      [[ "$1" -lt 1 || "$1" -gt 3 ]] && echo 'Error: -n|--network 1|2|3' && exit 1
+      pickNetwork="$1"
+      shift
+    fi
     ;;
   esac
 done
