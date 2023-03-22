@@ -18,6 +18,9 @@
 # Date: 2023-03-21
 
 readonly op_regex='^(^--(help|tag|listen|port|protocol|email|uuid|network|dest|server-names|x25519|shortIds)$)|(^-(prcl|sn|sid|[htpeundxl])$)$'
+readonly proto_list=('vless')
+readonly network_list=('tcp' 'h2' 'grpc')
+
 declare configPath='/usr/local/etc/xray/config.json'
 declare matchTag='xray-script-xtls-reality'
 declare isSetListen=0
@@ -25,7 +28,7 @@ declare setListen=''
 declare isSetPort=0
 declare setPort=0
 declare isSetProto=0
-declare setProto=''
+declare setProto=0
 declare matchEmail='vless@xtls.reality'
 declare isResetUUID=0
 declare resetUUID=''
