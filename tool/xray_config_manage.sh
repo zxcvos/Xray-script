@@ -67,7 +67,8 @@ while [[ $# -ge 1 ]]; do
     shift
     isSetProto=1
     if printf "%s" "${1}" | grep -Evq "${op_regex}"; then
-      setProto="$1"
+      [[ "$1" -ne ${#proto_list[@]} ]] && echo "Error: -prcl|--protocol [${#proto_list[@]}]" && exit 1
+      setProto=$(($1 - 1))
       shift
     fi
     ;;
@@ -89,8 +90,9 @@ while [[ $# -ge 1 ]]; do
     shift
     isPickNetwork=1
     if printf "%s" "${1}" | grep -Evq "${op_regex}"; then
-      [[ "$1" -lt 1 || "$1" -gt 3 ]] && echo 'Error: -n|--network 1|2|3' && exit 1
-      pickNetwork="$1"
+      # 1: tcp, 2: h2, 3: grpc
+      [[ "$1" -lt 1 || "$1" -gt ${#network_list[@]} ]] && echo "Error: -n|--network 1-${#network_list[@]}" && exit 1
+      pickNetwork=$(($1 - 1))
       shift
     fi
     ;;
@@ -115,6 +117,17 @@ while [[ $# -ge 1 ]]; do
   -sid | --shortIds)
     shift
     isResetShortIds=1
+    ;;
+  -h | --help)
+    echo
+    echo "$0 - A script to xray config manage."
+    echo
+    awk '/^# Usage:/,/^# Author:/ {if (/^# Author:/) exit;gsub(/^#\s?/,"");print $0}' "$0"
+    exit 0
+    ;;
+  *)
+    echo -ne "\nInvalid option: '$1'. Use -h or --help for usage instructions.\n\n"
+    exit 1
     ;;
   esac
 done
@@ -192,7 +205,6 @@ function set_port() {
 function set_proto() {
   local in_tag="${1}"
   local in_proto="${2}"
-  [ -z "${in_proto}" ] && in_proto='vless'
   jq --arg in_tag "${in_tag}" --arg in_proto "${in_proto}" '.inbounds |= map(if .tag == $in_tag then .protocol = $in_proto else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
 }
 
@@ -206,20 +218,15 @@ function reset_uuid() {
 
 function select_network() {
   local in_tag="${1}"
-  local pick="${2}"
-  [ ${pick} -eq 0 ] && pick=1
+  local in_network="${2}"
   jq --arg in_tag "${in_tag}" '.inbounds |= map(if .tag == $in_tag then del(.streamSettings.grpcSettings) else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
   jq --arg in_tag "${in_tag}" '.inbounds |= map(if .tag == $in_tag then .settings.clients |= map(.flow = "") else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
-  case "${pick}" in
-  1)
+  jq --arg in_tag "${in_tag}" --arg in_network "${in_network}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.network = $in_network else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+  case "${in_network}" in
+  tcp)
     jq --arg in_tag "${in_tag}" '.inbounds |= map(if .tag == $in_tag then .settings.clients |= map(.flow = "xtls-rprx-vision") else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
-    jq --arg in_tag "${in_tag}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.network = "tcp" else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
     ;;
-  2)
-    jq --arg in_tag "${in_tag}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.network = "h2" else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
-    ;;
-  3)
-    jq --arg in_tag "${in_tag}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.network = "grpc" else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+  grpc)
     jq --arg in_tag "${in_tag}" --arg serviceName "$(head -c 32 /dev/urandom | md5sum | head -c 8)" '.inbounds |= map(if .tag == $in_tag then .streamSettings.grpcSettings |= {"serviceName": $serviceName} else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
     ;;
   esac
