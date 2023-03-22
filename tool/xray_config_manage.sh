@@ -17,22 +17,23 @@
 # Version: 0.1
 # Date: 2023-03-21
 
+readonly op_regex='(^-{2}(help|tag|port|protocol|email|uuid|network|dest|server-names|x25519|shortIds)$)|(^-{1}(prcl|sn|sid|[htpeundx])$)'
 declare configPath='/usr/local/etc/xray/config.json'
 declare matchTag='xray-script-xtls-reality'
 declare isSetListen=0
-declare setListen="0.0.0.0"
+declare setListen=''
 declare isSetPort=0
-declare setPort=443
+declare setPort=0
 declare isSetProto=0
-declare setProto='vless'
+declare setProto=''
 declare matchEmail='vless@xtls.reality'
 declare isResetUUID=0
 declare resetUUID=''
 declare isPickNetwork=0
-declare pickNetwork=1
+declare pickNetwork=0
 
 while [[ $# -ge 1 ]]; do
-  case $1 in
+  case "${1}" in
   -t | --tag)
     shift
     [ "$1" ] || (echo 'Error: tag not provided' && exit 1)
@@ -42,17 +43,26 @@ while [[ $# -ge 1 ]]; do
   -l | --listen)
     shift
     isSetListen=1
-    [ "$1" ] && setListen="$1" && shift
+    if printf "%s" "${1}" | grep -Evq "${op_regex}"; then
+      setListen="$1"
+      shift
+    fi
     ;;
   -p | --port)
     shift
     isSetPort=1
-    [ "$1" ] && setPort="$1" && shift
+    if printf "%s" "${1}" | grep -Evq "${op_regex}"; then
+      setPort="$1"
+      shift
+    fi
     ;;
   -prcl | --protocol)
     shift
     isSetProto=1
-    [ "$1" ] && setProto="$1" && shift
+    if printf "%s" "${1}" | grep -Evq "${op_regex}"; then
+      setProto="$1"
+      shift
+    fi
     ;;
   -e | --email)
     shift
@@ -63,12 +73,15 @@ while [[ $# -ge 1 ]]; do
   -u | --uuid)
     shift
     isResetUUID=1
-    [ "$1" ] && resetUUID="$1" && shift
+    if printf "%s" "${1}" | grep -Evq "${op_regex}"; then
+      resetUUID="$1"
+      shift
+    fi
     ;;
   -n | --network)
     shift
     isPickNetwork=1
-    if [ "$1" ]; then
+    if printf "%s" "${1}" | grep -Evq "${op_regex}"; then
       [[ "$1" -lt 1 || "$1" -gt 3 ]] && echo 'Error: -n|--network 1|2|3' && exit 1
       pickNetwork="$1"
       shift
@@ -78,7 +91,7 @@ while [[ $# -ge 1 ]]; do
 done
 
 function is_digit() {
-  local input="${1}"
+  local input=${1}
   if [[ "${input}" =~ ^[0-9]+$ ]]; then
     return 0
   else
@@ -131,6 +144,7 @@ function is_UDS() {
 function set_listen() {
   local in_tag="${1}"
   local in_listen="${2}"
+  [ -z "${in_listen}" ] && in_listen='0.0.0.0'
   if is_valid_IPv4_address "${in_listen}" || is_valid_IPv6_address "${in_listen}" || is_UDS "${in_listen}"; then
     jq --arg in_tag "${in_tag}" --arg in_listen "${in_listen}" '.inbounds |= map(if .tag == $in_tag then .listen = $in_listen else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
   fi
@@ -139,6 +153,7 @@ function set_listen() {
 function set_port() {
   local in_tag="${1}"
   local in_port="${2}"
+  [ ${in_port} -eq 0 ] && in_port=443
   if is_digit "${in_port}" && [ ${in_port} -gt 0 ] && [ ${in_port} -lt 65536 ]; then
     jq --arg in_tag "${in_tag}" --argjson in_port ${in_port} '.inbounds |= map(if .tag == $in_tag then .port = $in_port else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
   else
@@ -149,6 +164,7 @@ function set_port() {
 function set_proto() {
   local in_tag="${1}"
   local in_proto="${2}"
+  [ -z "${in_proto}" ] && in_proto='vless'
   jq --arg in_tag "${in_tag}" --arg in_proto "${in_proto}" '.inbounds |= map(if .tag == $in_tag then .protocol = $in_proto else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
 }
 
@@ -156,5 +172,6 @@ function reset_uuid() {
   local in_tag="${1}"
   local c_email="${2}"
   local c_id="${3}"
+  [ -z "${c_id}" ] && c_id=$(cat /proc/sys/kernel/random/uuid)
   jq --arg in_tag "${in_tag}" --arg c_email "${c_email}" --arg c_id "${c_id}" '.inbounds |= map(if .tag == $in_tag then .settings.clients |= map(if .email == $c_email then .id = $c_id else . end) else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
 }
