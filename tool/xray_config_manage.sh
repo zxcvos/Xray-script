@@ -25,6 +25,8 @@ declare setPort=443
 declare isSetProto=0
 declare setProto='vless'
 declare matchEmail='vless@xtls.reality'
+declare isResetUUID=0
+declare resetUUID=''
 
 while [[ $# -ge 1 ]]; do
   case $1 in
@@ -49,6 +51,11 @@ while [[ $# -ge 1 ]]; do
     [ "$1" ] || (echo 'Error: email not provided' && exit 1)
     matchEmail="$1"
     shift
+    ;;
+  -u | --uuid)
+    shift
+    isResetUUID=1
+    [ "$1" ] && resetUUID="$1" && shift
     ;;
   esac
 done
