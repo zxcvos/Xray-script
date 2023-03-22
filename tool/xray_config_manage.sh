@@ -59,7 +59,7 @@ declare x25519PrivateKey=''
 declare isResetShortIds=0
 
 if [ $# -eq 0 ]; then
-    set -- '-h'
+  set -- '-h'
 fi
 
 while [[ $# -ge 1 ]]; do
@@ -291,3 +291,39 @@ function reset_sid() {
     jq --arg in_tag "${in_tag}" --arg sid "${sid}" --argjson i $((i - 1)) '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.shortIds[$i] = $sid else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
   done
 }
+
+if [ ${isSetListen} -eq 1 ]; then
+  set_listen "${matchTag}" "${setListen}"
+fi
+
+if [ ${isSetPort} -eq 1 ]; then
+  set_port "${matchTag}" "${setPort}"
+fi
+
+if [ ${isSetProto} -eq 1 ]; then
+  set_proto "${matchTag}" "${proto_list[${setProto}]}"
+fi
+
+if [ ${isResetUUID} -eq 1 ]; then
+  reset_uuid "${matchTag}" "${matchEmail}" "${resetUUID}"
+fi
+
+if [ ${isPickNetwork} -eq 1 ]; then
+  select_network "${matchTag}" "${network_list[${pickNetwork}]}"
+fi
+
+if [ "${setDest}" ]; then
+  set_dest "${matchTag}" "${setDest}"
+fi
+
+if [ "${setServerNames}" ]; then
+  set_server_names "${matchTag}" "${setServerNames}"
+fi
+
+if [ "${x25519PrivateKey}" ]; then
+  reset_x25519 "${matchTag}" "${x25519PrivateKey}"
+fi
+
+if [ ${isResetShortIds} -eq 1 ]; then
+  reset_sid "${matchTag}"
+fi
