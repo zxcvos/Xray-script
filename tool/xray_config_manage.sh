@@ -95,6 +95,16 @@ function is_UDS() {
   fi
 }
 
+function set_listen() {
+  local in_tag="${1}"
+  local in_listen="${2}"
+  if is_UDS "${in_listen}"; then
+    jq --arg in_tag "${in_tag}" --arg in_listen "${in_listen}" '.inbounds |= map(if .tag == $in_tag then .listen = $in_listen else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+  else
+    echo "Error: Please enter a valid UDS file path, or a valid abstract socket"
+  fi
+}
+
 function set_port() {
   local in_tag="${1}"
   local in_port="${2}"
