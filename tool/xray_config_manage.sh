@@ -103,18 +103,15 @@ function is_valid_IPv4_address() {
   local ip_regex='^((2(5[0-5]|[0-4][0-9]))|[0-1]?[0-9]{1,2})(\.((2(5[0-5]|[0-4][0-9]))|[0-1]?[0-9]{1,2})){3}$'
   local IPv4="${1}"
   if [[ ! "${IPv4}" =~ ${ip_regex} ]]; then
-    echo "Invalid IPv4 address format: ${IPv4}"
     return 1
   fi
   IFS='.' read -ra fields <<<"${IPv4}"
   for field in "${fields[@]}"; do
     if ((field > 255)); then
-      echo "Invalid IPv4 address: ${IPv4} (field $field is out of range)"
       return 1
     fi
   done
   if ((${#fields[@]} != 4)); then
-    echo "Invalid IPv4 address: ${IPv4} (does not contain 4 fields)"
     return 1
   fi
   return 0
@@ -126,7 +123,6 @@ function is_valid_IPv6_address() {
   if [[ "${IPv6}" =~ ${ip_regex} ]]; then
     return 0
   else
-    echo "Invalid IPv6 address format: ${IPv6}"
     return 1
   fi
 }
@@ -136,7 +132,6 @@ function is_UDS() {
   if echo "${input}" | grep -Eq "^(\/[a-zA-Z0-9\_\-\+\.]+)*\/[a-zA-Z0-9\_\-\+]+\.sock$" || echo "${input}" | grep -Eq "^@{1,2}[a-zA-Z0-9\_\-\+\.]+$"; then
     return 0
   else
-    echo "Error: Please enter a valid UDS file path, or a valid abstract socket"
     return 1
   fi
 }
@@ -147,6 +142,10 @@ function set_listen() {
   [ -z "${in_listen}" ] && in_listen='0.0.0.0'
   if is_valid_IPv4_address "${in_listen}" || is_valid_IPv6_address "${in_listen}" || is_UDS "${in_listen}"; then
     jq --arg in_tag "${in_tag}" --arg in_listen "${in_listen}" '.inbounds |= map(if .tag == $in_tag then .listen = $in_listen else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+  else
+    echo "Invalid IPv4 address format: ${in_listen}"
+    echo "Invalid IPv6 address format: ${in_listen}"
+    echo "Invalid UDS file path or abstract socket format: ${in_listen}"
   fi
 }
 
@@ -174,4 +173,25 @@ function reset_uuid() {
   local c_id="${3}"
   [ -z "${c_id}" ] && c_id=$(cat /proc/sys/kernel/random/uuid)
   jq --arg in_tag "${in_tag}" --arg c_email "${c_email}" --arg c_id "${c_id}" '.inbounds |= map(if .tag == $in_tag then .settings.clients |= map(if .email == $c_email then .id = $c_id else . end) else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+}
+
+function select_network() {
+  local in_tag="${1}"
+  local pick="${2}"
+  [ ${pick} -eq 0 ] && pick=1
+  jq --arg in_tag "${in_tag}" '.inbounds |= map(if .tag == $in_tag then del(.streamSettings.grpcSettings) else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+  jq --arg in_tag "${in_tag}" '.inbounds |= map(if .tag == $in_tag then .settings.clients |= map(.flow = "") else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+  case "${pick}" in
+  1)
+    jq --arg in_tag "${in_tag}" '.inbounds |= map(if .tag == $in_tag then .settings.clients |= map(.flow = "xtls-rprx-vision") else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+    jq --arg in_tag "${in_tag}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.network = "tcp" else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+    ;;
+  2)
+    jq --arg in_tag "${in_tag}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.network = "h2" else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+    ;;
+  3)
+    jq --arg in_tag "${in_tag}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.network = "grpc" else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+    jq --arg in_tag "${in_tag}" --arg serviceName "$(head -c 32 /dev/urandom | md5sum | head -c 8)" '.inbounds |= map(if .tag == $in_tag then .streamSettings.grpcSettings |= {"serviceName": $serviceName} else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+    ;;
+  esac
 }
