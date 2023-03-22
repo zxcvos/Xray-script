@@ -31,6 +31,7 @@ declare isResetUUID=0
 declare resetUUID=''
 declare isPickNetwork=0
 declare pickNetwork=0
+declare setDest=''
 
 while [[ $# -ge 1 ]]; do
   case "${1}" in
@@ -86,6 +87,12 @@ while [[ $# -ge 1 ]]; do
       pickNetwork="$1"
       shift
     fi
+    ;;
+  -d | --dest)
+    shift
+    (printf "%s" "${1}" | grep -Eq "${op_regex}" || [ -z "$1" ]) && echo 'Error: dest not provided' && exit 1
+    setDest="$1"
+    shift
     ;;
   esac
 done
