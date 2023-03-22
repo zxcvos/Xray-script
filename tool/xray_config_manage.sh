@@ -244,3 +244,16 @@ function reset_x25519() {
   local private_key="${2}"
   jq --arg in_tag "${in_tag}" --arg private_key "${private_key}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.privateKey = $private_key else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
 }
+
+function reset_sid() {
+  local in_tag="${1}"
+  local sids_len=0
+  local sid_len=0
+  local sid=''
+  sids_len=$(jq --arg in_tag "${in_tag}" '.inbounds[] | select(.tag == $in_tag) | .streamSettings.realitySettings.shortIds | length' "${configPath}")
+  for i in $(seq 1 ${sids_len}); do
+    sid_len=$(jq --arg in_tag "${in_tag}" --argjson i $((i - 1)) '.inbounds[] | select(.tag == $in_tag) | .streamSettings.realitySettings.shortIds[$i] | length' "${configPath}")
+    sid=$(head -c 32 /dev/urandom | md5sum | head -c ${sid_len})
+    jq --arg in_tag "${in_tag}" --arg sid "${sid}" --argjson i $((i - 1)) '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.shortIds[$i] = $sid else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+  done
+}
