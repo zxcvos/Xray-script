@@ -19,6 +19,8 @@
 
 declare configPath='/usr/local/etc/xray/config.json'
 declare matchTag='xray-script-xtls-reality'
+declare isSetListen=0
+declare setListen="0.0.0.0"
 declare isSetPort=0
 declare setPort=443
 declare isSetProto=0
@@ -36,6 +38,11 @@ while [[ $# -ge 1 ]]; do
     [ "$1" ] || (echo 'Error: tag not provided' && exit 1)
     matchTag="$1"
     shift
+    ;;
+  -l | --listen)
+    shift
+    isSetListen=1
+    [ "$1" ] && setListen="$1" && shift
     ;;
   -p | --port)
     shift
