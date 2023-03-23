@@ -238,7 +238,7 @@ function set_port() {
   local in_tag="${1}"
   local in_port="${2}"
   [ ${in_port} -eq 0 ] && in_port=443
-  if is_digit "${in_port}" && [ ${in_port} -gt 0 ] && [ ${in_port} -lt 65536 ]; then
+  if is_port "${in_port}"; then
     jq --arg in_tag "${in_tag}" --argjson in_port ${in_port} '.inbounds |= map(if .tag == $in_tag then .port = $in_port else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
   else
     echo "Error: Please enter a valid port number between 1-65535"
@@ -292,10 +292,15 @@ function select_network() {
 function set_dest() {
   local in_tag="${1}"
   local dest="${2}"
-  if ! is_UDS "${dest}" && [ "${dest}" == "${dest%%:*}" ]; then
-    dest="${dest}:443"
+  if is_UDS "${dest}" || is_domain "${dest}"; then
+    dest="${dest#*//}"
+    if ! is_UDS "${dest}" && [ "${dest}" == "${dest%:*}" ]; then
+      dest="${dest}:443"
+    fi
+    jq --arg in_tag "${in_tag}" --arg dest "${dest}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.dest = $dest else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+  else
+    echo "Error: Please enter a valid domain name or socket path"
   fi
-  jq --arg in_tag "${in_tag}" --arg dest "${dest}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.dest = $dest else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
 }
 
 function set_server_names() {
