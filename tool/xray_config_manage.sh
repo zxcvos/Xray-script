@@ -225,7 +225,7 @@ function set_port() {
   fi
 }
 
-function set_proto() {
+function select_proto() {
   local in_tag="${1}"
   local pick="${2}"
   local in_proto=''
@@ -314,7 +314,7 @@ if [ ${isSetPort} -eq 1 ]; then
 fi
 
 if [ ${isSetProto} -eq 1 ]; then
-  set_proto "${matchTag}" "${setProto}"
+  select_proto "${matchTag}" "${setProto}"
 fi
 
 if [ ${isResetUUID} -eq 1 ]; then
