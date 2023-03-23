@@ -306,9 +306,17 @@ function set_dest() {
 function set_server_names() {
   local in_tag="${1}"
   local sns_str="${2}"
-  local sns_list="$(printf '%s' "${sns_str}" | jq -R -s -c 'split(",") | map(select(length > 0))')"
-  jq --arg in_tag "${in_tag}" --argjson sns "${sns_list}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.serverNames = [] else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
-  jq --arg in_tag "${in_tag}" --argjson sns "${sns_list}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.serverNames = $sns else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+  local sns_list=''
+  for domain in $(printf '%s' "${sns_str}" | jq -R -s -c -r 'split(",") | map(select(length > 0)) | .[]'); do
+    xray tls ping ${domain} >/dev/null 2>&1 && sns_list+="${domain},"
+  done
+  sns_list=$(printf '%s' "${sns_list}" | jq -R -s -c 'split(",") | map(select(length > 0))')
+  if [ ${sns_list} != '[]' ]; then
+    jq --arg in_tag "${in_tag}" --argjson sns "${sns_list}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.serverNames = [] else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+    jq --arg in_tag "${in_tag}" --argjson sns "${sns_list}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.serverNames = $sns else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+  else
+    echo "Error: Please enter a valid domain name"
+  fi
 }
 
 function reset_x25519() {
