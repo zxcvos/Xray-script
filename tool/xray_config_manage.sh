@@ -201,6 +201,16 @@ function is_UDS() {
   fi
 }
 
+function is_domain() {
+  local input="${1}"
+  local domain_regex='^((https?:\/\/)?([a-zA-Z0-9](\-?[a-zA-Z0-9])*\.)+[a-zA-Z]{2,})$'
+  if [[ "${input}" =~ ${domain_regex} ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
 function set_listen() {
   local in_tag="${1}"
   local in_listen="${2}"
