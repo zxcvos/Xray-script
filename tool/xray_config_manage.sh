@@ -164,6 +164,16 @@ function is_digit() {
   fi
 }
 
+function is_port() {
+  local input=${1}
+  local port_regex='^((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))$'
+  if [[ "${input}" =~ ${port_regex} ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
 function is_valid_IPv4_address() {
   local ip_regex='^((2(5[0-5]|[0-4][0-9]))|[0-1]?[0-9]{1,2})(\.((2(5[0-5]|[0-4][0-9]))|[0-1]?[0-9]{1,2})){3}$'
   local IPv4="${1}"
@@ -203,7 +213,7 @@ function is_UDS() {
 
 function is_domain() {
   local input="${1}"
-  local domain_regex='^((https?:\/\/)?([a-zA-Z0-9](\-?[a-zA-Z0-9])*\.)+[a-zA-Z]{2,})$'
+  local domain_regex='^((https?:\/\/)?([a-zA-Z0-9](\-?[a-zA-Z0-9])*\.)+[a-zA-Z]{2,}(:((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4})))?)$'
   if [[ "${input}" =~ ${domain_regex} ]]; then
     return 0
   else
