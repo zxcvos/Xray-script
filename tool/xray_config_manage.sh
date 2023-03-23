@@ -113,8 +113,8 @@ while [[ $# -ge 1 ]]; do
     shift
     isPickNetwork=1
     if printf "%s" "${1}" | grep -Evq "${op_regex}"; then
-      [[ "$1" -lt 1 || "$1" -gt ${#network_list[@]} ]] && echo "Error: -n|--network [1-${#network_list[@]}]" && exit 1
-      pickNetwork=$(($1 - 1))
+      ([ "$1" -lt 1 ] || [ "$1" -gt ${#network_list[@]} ]) && echo "Error: -n|--network [1-${#network_list[@]}]" && exit 1
+      pickNetwork="$1"
       shift
     fi
     ;;
@@ -248,18 +248,25 @@ function reset_uuid() {
 
 function select_network() {
   local in_tag="${1}"
-  local in_network="${2}"
-  jq --arg in_tag "${in_tag}" '.inbounds |= map(if .tag == $in_tag then del(.streamSettings.grpcSettings) else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
-  jq --arg in_tag "${in_tag}" '.inbounds |= map(if .tag == $in_tag then .settings.clients |= map(.flow = "") else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
-  jq --arg in_tag "${in_tag}" --arg in_network "${in_network}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.network = $in_network else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
-  case "${in_network}" in
-  tcp)
-    jq --arg in_tag "${in_tag}" '.inbounds |= map(if .tag == $in_tag then .settings.clients |= map(.flow = "xtls-rprx-vision") else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
-    ;;
-  grpc)
-    jq --arg in_tag "${in_tag}" --arg serviceName "$(head -c 32 /dev/urandom | md5sum | head -c 8)" '.inbounds |= map(if .tag == $in_tag then .streamSettings.grpcSettings |= {"serviceName": $serviceName} else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
-    ;;
-  esac
+  local pick="${2}"
+  local in_network=''
+  [ ${pick} -eq 0 ] && pick=1
+  if is_digit "${pick}" && [ ${pick} -ge 1 ] && [ "${pick}" -le ${#network_list[@]} ]; then
+    in_network="${network_list[$((${pick} - 1))]}"
+    jq --arg in_tag "${in_tag}" '.inbounds |= map(if .tag == $in_tag then del(.streamSettings.grpcSettings) else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+    jq --arg in_tag "${in_tag}" '.inbounds |= map(if .tag == $in_tag then .settings.clients |= map(.flow = "") else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+    jq --arg in_tag "${in_tag}" --arg in_network "${in_network}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.network = $in_network else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+    case "${in_network}" in
+    tcp)
+      jq --arg in_tag "${in_tag}" '.inbounds |= map(if .tag == $in_tag then .settings.clients |= map(.flow = "xtls-rprx-vision") else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+      ;;
+    grpc)
+      jq --arg in_tag "${in_tag}" --arg serviceName "$(head -c 32 /dev/urandom | md5sum | head -c 8)" '.inbounds |= map(if .tag == $in_tag then .streamSettings.grpcSettings |= {"serviceName": $serviceName} else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+      ;;
+    esac
+  else
+    echo "Error: Please enter a valid network list index between 1-${#network_list[@]}"
+  fi
 }
 
 function set_dest() {
@@ -315,7 +322,7 @@ if [ ${isResetUUID} -eq 1 ]; then
 fi
 
 if [ ${isPickNetwork} -eq 1 ]; then
-  select_network "${matchTag}" "${network_list[${pickNetwork}]}"
+  select_network "${matchTag}" "${pickNetwork}"
 fi
 
 if [ "${setDest}" ]; then
