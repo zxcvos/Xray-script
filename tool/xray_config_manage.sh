@@ -6,19 +6,19 @@
 #   ./xray_config_manage.sh [-t TAG] [-l [LISTEN]] [-p [PORT]] [-e EMAIL] [-prcl [PROTOCOL]] [-u [UUID]] [-n [NETWORK]] [-d DEST] [-sn SERVERNAMES] [-x PRIVATE KEY] [-sid]
 #
 # Options:
-#   -h, --help           Display help message.
-#   -t, --tag            The inbounds match tag. default: xray-script-xtls-reality
-#   -l, --listen         Set listen, default: 0.0.0.0
-#   -p, --port           Set port, default: 443
-#   -prcl, --protocol    Set protocol, 1: vless, default: 1 (Protocol supports only vless)
-#   -e, --email          Clients match email, default: vless@xtls.reality
-#   -u, --uuid           Reset UUID, default: random UUID
-#   -n, --network        Pick network, 1: tcp, 2: h2, 3: grpc, default: 1
-#                        tcp -> flow: "xtls-rprx-vision", h2 or grpc -> flow: "", grpc -> random serviceName
-#   -d, --dest           Set dest
-#   -sn, --server-names  Set server names, e.g. xxx.com,www.xxx.com
-#   -x, --x25519         Reset x25519
-#   -sid, --shortIds     Reset shortIds
+#   -h, --help                   Display help message.
+#   -t, --tag                    The inbounds match tag. default: xray-script-xtls-reality
+#   -l, --listen                 Set listen, default: 0.0.0.0
+#   -p, --port                   Set port, default: 443
+#   -prcl, --protocol            Set protocol, 1: vless, default: 1 (Protocol supports only vless)
+#   -e, --email                  Clients match email, default: vless@xtls.reality
+#   -u, --uuid                   Reset UUID, default: random UUID
+#   -n, --network                Pick network, 1: tcp, 2: h2, 3: grpc, default: 1
+#                                tcp -> flow: "xtls-rprx-vision", h2 or grpc -> flow: "", grpc -> random serviceName
+#   -d, --dest                   Set dest
+#   -sn, --server-names          Set server names, e.g. xxx.com,www.xxx.com
+#   -x, --x25519                 Reset x25519
+#   -rsid, --reset-shortIds      Reset shortIds
 #
 # Explanation:
 # - All parameters, except for "tag" itself, should be used with the "tag" parameter. The "tag" parameter is used to find the inbound object in the inbounds array that contains the corresponding "tag". If the -t/--tag parameter is not used, the default value is "xray-script-xtls-reality".
@@ -36,7 +36,7 @@
 # Version: 0.1
 # Date: 2023-03-21
 
-readonly op_regex='^(^--(help|tag|listen|port|protocol|email|uuid|network|dest|server-names|x25519|shortIds)$)|(^-(prcl|sn|sid|[htpeundxl])$)$'
+readonly op_regex='^(^--(help|tag|listen|port|protocol|email|uuid|network|dest|server-names|x25519|reset-shortIds)$)|(^-(prcl|sn|rsid|[htpeundxl])$)$'
 readonly proto_list=('vless')
 readonly network_list=('tcp' 'h2' 'grpc')
 
@@ -136,7 +136,7 @@ while [[ $# -ge 1 ]]; do
     x25519PrivateKey="$1"
     shift
     ;;
-  -sid | --shortIds)
+  -rsid | --reset-shortIds)
     shift
     isResetShortIds=1
     ;;
