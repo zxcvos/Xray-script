@@ -6,19 +6,20 @@
 #   ./xray_config_manage.sh [-t TAG] [-l [LISTEN]] [-p [PORT]] [-e EMAIL] [-prcl [PROTOCOL]] [-u [UUID]] [-n [NETWORK]] [-d DEST] [-sn SERVERNAMES] [-x PRIVATE KEY] [-sid]
 #
 # Options:
-#   -h, --help                   Display help message.
-#   -t, --tag                    The inbounds match tag. default: xray-script-xtls-reality
-#   -l, --listen                 Set listen, default: 0.0.0.0
-#   -p, --port                   Set port, default: 443
-#   -prcl, --protocol            Set protocol, 1: vless, default: 1 (Protocol supports only vless)
-#   -e, --email                  Clients match email, default: vless@xtls.reality
-#   -u, --uuid                   Reset UUID, default: random UUID
-#   -n, --network                Pick network, 1: tcp, 2: h2, 3: grpc, default: 1
-#                                tcp -> flow: "xtls-rprx-vision", h2 or grpc -> flow: "", grpc -> random serviceName
-#   -d, --dest                   Set dest
-#   -sn, --server-names          Set server names, e.g. xxx.com,www.xxx.com
-#   -x, --x25519                 Reset x25519
-#   -rsid, --reset-shortIds      Reset shortIds
+#   -h, --help                    Display help message.
+#   -t, --tag                     The inbounds match tag. default: xray-script-xtls-reality
+#   -l, --listen                  Set listen, default: 0.0.0.0
+#   -p, --port                    Set port, default: 443
+#   -prcl, --protocol             Set protocol, 1: vless, default: 1 (Protocol supports only vless)
+#   -e, --email                   Clients match email, default: vless@xtls.reality
+#   -u, --uuid                    Reset UUID, default: random UUID
+#   -n, --network                 Pick network, 1: tcp, 2: h2, 3: grpc, default: 1
+#                                 tcp -> flow: "xtls-rprx-vision", h2 or grpc -> flow: "", grpc -> random serviceName
+#   -d, --dest                    Set dest
+#   -sn, --server-names           Set server names, e.g. xxx.com,www.xxx.com
+#   -asn, --append-server-names   Append server names, e.g. xxx.com,www.xxx.com
+#   -x, --x25519                  Reset x25519
+#   -rsid, --reset-shortIds       Reset shortIds
 #
 # Explanation:
 # - All parameters, except for "tag" itself, should be used with the "tag" parameter. The "tag" parameter is used to find the inbound object in the inbounds array that contains the corresponding "tag". If the -t/--tag parameter is not used, the default value is "xray-script-xtls-reality".
@@ -36,7 +37,7 @@
 # Version: 0.1
 # Date: 2023-03-21
 
-readonly op_regex='^(^--(help|tag|listen|port|protocol|email|uuid|network|dest|server-names|x25519|reset-shortIds)$)|(^-(prcl|sn|rsid|[htpeundxl])$)$'
+readonly op_regex='^(^--(help|tag|listen|port|protocol|email|uuid|network|dest|(append-)?server-names|x25519|reset-shortIds)$)|(^-(prcl|a?sn|rsid|[htpeundxl])$)$'
 readonly proto_list=('vless')
 readonly network_list=('tcp' 'h2' 'grpc')
 
@@ -55,6 +56,7 @@ declare isPickNetwork=0
 declare pickNetwork=0
 declare setDest=''
 declare setServerNames=''
+declare appendServerNames=''
 declare x25519PrivateKey=''
 declare isResetShortIds=0
 
@@ -128,6 +130,12 @@ while [[ $# -ge 1 ]]; do
     shift
     (printf "%s" "${1}" | grep -Eq "${op_regex}" || [ -z "$1" ]) && echo 'Error: server names not provided' && exit 1
     setServerNames="$1"
+    shift
+    ;;
+  -asn | --append-server-names)
+    shift
+    (printf "%s" "${1}" | grep -Eq "${op_regex}" || [ -z "$1" ]) && echo 'Error: server names not provided' && exit 1
+    appendServerNames="$1"
     shift
     ;;
   -x | --x25519)
@@ -306,14 +314,16 @@ function set_dest() {
 function set_server_names() {
   local in_tag="${1}"
   local sns_str="${2}"
+  local is_append="${3}"
   local sns_list=''
   for domain in $(printf '%s' "${sns_str}" | jq -R -s -c -r 'split(",") | map(select(length > 0)) | .[]'); do
     xray tls ping ${domain} >/dev/null 2>&1 && sns_list+="${domain},"
   done
   sns_list=$(printf '%s' "${sns_list}" | jq -R -s -c 'split(",") | map(select(length > 0))')
   if [ ${sns_list} != '[]' ]; then
-    jq --arg in_tag "${in_tag}" --argjson sns "${sns_list}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.serverNames = [] else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
-    jq --arg in_tag "${in_tag}" --argjson sns "${sns_list}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.serverNames = $sns else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+    [ ${is_append} -eq 0 ] &&  jq --arg in_tag "${in_tag}" --argjson sns "${sns_list}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.serverNames = [] else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+    jq --arg in_tag "${in_tag}" --argjson sns "${sns_list}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.serverNames += $sns else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+    [ ${is_append} -eq 1 ] &&  jq --arg in_tag "${in_tag}" --argjson sns "${sns_list}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.serverNames = (.streamSettings.realitySettings.serverNames | unique) else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
   else
     echo "Error: Please enter a valid domain name, e.g. xxx.com,www.xxx.com"
   fi
@@ -371,7 +381,11 @@ if [ "${setDest}" ]; then
 fi
 
 if [ "${setServerNames}" ]; then
-  set_server_names "${matchTag}" "${setServerNames}"
+  set_server_names "${matchTag}" "${setServerNames}" 0
+fi
+
+if [ "${appendServerNames}" ]; then
+  set_server_names "${matchTag}" "${appendServerNames}" 1
 fi
 
 if [ "${x25519PrivateKey}" ]; then
