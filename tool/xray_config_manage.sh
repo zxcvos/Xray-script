@@ -90,8 +90,8 @@ while [[ $# -ge 1 ]]; do
     shift
     isSetProto=1
     if printf "%s" "${1}" | grep -Evq "${op_regex}"; then
-      [[ "$1" -ne ${#proto_list[@]} ]] && echo "Error: -prcl|--protocol [${#proto_list[@]}]" && exit 1
-      setProto=$(($1 - 1))
+      ([ "$1" -lt 1 ] || [ "$1" -gt ${#proto_list[@]} ]) && echo "Error: -prcl|--protocol [1-${#proto_list[@]}]" && exit 1
+      setProto="$1"
       shift
     fi
     ;;
@@ -113,8 +113,7 @@ while [[ $# -ge 1 ]]; do
     shift
     isPickNetwork=1
     if printf "%s" "${1}" | grep -Evq "${op_regex}"; then
-      # 1: tcp, 2: h2, 3: grpc
-      [[ "$1" -lt 1 || "$1" -gt ${#network_list[@]} ]] && echo "Error: -n|--network 1-${#network_list[@]}" && exit 1
+      [[ "$1" -lt 1 || "$1" -gt ${#network_list[@]} ]] && echo "Error: -n|--network [1-${#network_list[@]}]" && exit 1
       pickNetwork=$(($1 - 1))
       shift
     fi
@@ -228,8 +227,15 @@ function set_port() {
 
 function set_proto() {
   local in_tag="${1}"
-  local in_proto="${2}"
-  jq --arg in_tag "${in_tag}" --arg in_proto "${in_proto}" '.inbounds |= map(if .tag == $in_tag then .protocol = $in_proto else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+  local pick="${2}"
+  local in_proto=''
+  [ ${pick} -eq 0 ] && pick=1
+  if is_digit "${pick}" && [ ${pick} -ge 1 ] && [ "${pick}" -le ${#proto_list[@]} ]; then
+    in_proto="${proto_list[$((${pick} - 1))]}"
+    jq --arg in_tag "${in_tag}" --arg in_proto "${in_proto}" '.inbounds |= map(if .tag == $in_tag then .protocol = $in_proto else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+  else
+    echo "Error: Please enter a valid protocol list index between 1-${#proto_list[@]}"
+  fi
 }
 
 function reset_uuid() {
@@ -301,7 +307,7 @@ if [ ${isSetPort} -eq 1 ]; then
 fi
 
 if [ ${isSetProto} -eq 1 ]; then
-  set_proto "${matchTag}" "${proto_list[${setProto}]}"
+  set_proto "${matchTag}" "${setProto}"
 fi
 
 if [ ${isResetUUID} -eq 1 ]; then
