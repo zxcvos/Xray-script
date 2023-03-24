@@ -3,10 +3,12 @@
 # This script is used to manage xray configuration
 #
 # Usage:
-#   ./xray_config_manage.sh [-t TAG] [-l [LISTEN]] [-p [PORT]] [-e EMAIL] [-prcl [PROTOCOL]] [-u [UUID]] [-n [NETWORK]] [-d DEST] [-sn SERVERNAMES] [-asn SERVERNAMES] [-x PRIVATE KEY] [-sid [SHORTIDS]] [-rsid] [-asid SHORTIDS]
+#   ./xray_config_manage.sh [--path PATH] [--download|--reset] [-t TAG] [-l [LISTEN]] [-p [PORT]] [-e EMAIL] [-prcl [PROTOCOL]] [-u [UUID]] [-n [NETWORK]] [-d DEST] [-sn SERVERNAMES] [-asn SERVERNAMES] [-x PRIVATE KEY] [-sid [SHORTIDS]] [-rsid] [-asid SHORTIDS]
 #
 # Options:
 #   -h, --help                    Display help message.
+#   --path                        Xray config full path, default: /usr/local/etc/xray/config.json
+#   --download, --reset           Download xray config template
 #   -t, --tag                     The inbounds match tag. default: xray-script-xtls-reality
 #   -l, --listen                  Set listen, default: 0.0.0.0
 #   -p, --port                    Set port, default: 443
@@ -39,11 +41,12 @@
 # Version: 0.1
 # Date: 2023-03-21
 
-readonly op_regex='^(^--(help|tag|listen|port|protocol|email|uuid|network|dest|(append-)?server-names|x25519|((reset|append)-)?shortIds)$)|(^-(prcl|a?sn|(r|a)?sid|[htpeundxl])$)$'
+readonly op_regex='^(^--(help|path|download|reset|tag|listen|port|protocol|email|uuid|network|dest|(append-)?server-names|x25519|((reset|append)-)?shortIds)$)|(^-(prcl|a?sn|(r|a)?sid|[htpeundxl])$)$'
 readonly proto_list=('vless')
 readonly network_list=('tcp' 'h2' 'grpc')
 
 declare configPath='/usr/local/etc/xray/config.json'
+declare isDownload=0
 declare matchTag='xray-script-xtls-reality'
 declare isSetListen=0
 declare setListen=''
@@ -71,6 +74,16 @@ fi
 
 while [[ $# -ge 1 ]]; do
   case "${1}" in
+  --path)
+    shift
+    (printf "%s" "${1}" | grep -Eq "${op_regex}" || [ -z "$1" ]) && echo 'Error: path not provided' && exit 1
+    configPath="$1"
+    shift
+    ;;
+  --download | --reset)
+    shift
+    isDownload=1
+    ;;
   -t | --tag)
     shift
     (printf "%s" "${1}" | grep -Eq "${op_regex}" || [ -z "$1" ]) && echo 'Error: tag not provided' && exit 1
@@ -232,6 +245,15 @@ function is_valid_IPv6_address() {
 function is_UDS() {
   local input="${1}"
   if echo "${input}" | grep -Eq "^(\/[a-zA-Z0-9\_\-\+\.]+)*\/[a-zA-Z0-9\_\-\+]+\.sock$" || echo "${input}" | grep -Eq "^@{1,2}[a-zA-Z0-9\_\-\+\.]+$"; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+function is_config_path() {
+  local input="${1}"
+  if echo "${input}" | grep -Eq "^(\/[a-zA-Z0-9\_\-\+\.]+)*\/[a-zA-Z0-9\_\-\+]+\.json$"; then
     return 0
   else
     return 1
@@ -401,6 +423,15 @@ function reset_sid() {
     exit 1
   fi
 }
+
+if ! is_config_path "${configPath}"; then
+  echo 'Error: Please use a full Xray configuration file path'
+  exit 1
+fi
+
+if [ ${isDownload} -eq 1 ]; then
+  wget -O "${configPath}" https://raw.githubusercontent.com/zxcvos/Xray-script/main/VLESS-XTLS-uTLS-REALITY/server.json
+fi
 
 if [ ${isSetListen} -eq 1 ]; then
   set_listen "${matchTag}" "${setListen}"
