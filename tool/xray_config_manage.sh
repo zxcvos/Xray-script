@@ -3,7 +3,7 @@
 # This script is used to manage xray configuration
 #
 # Usage:
-#   ./xray_config_manage.sh [-t TAG] [-l [LISTEN]] [-p [PORT]] [-e EMAIL] [-prcl [PROTOCOL]] [-u [UUID]] [-n [NETWORK]] [-d DEST] [-sn SERVERNAMES] [-asn SERVERNAMES] [-x PRIVATE KEY] [-sid SHORTIDS] [-rsid] [-asid SHORTIDS]
+#   ./xray_config_manage.sh [-t TAG] [-l [LISTEN]] [-p [PORT]] [-e EMAIL] [-prcl [PROTOCOL]] [-u [UUID]] [-n [NETWORK]] [-d DEST] [-sn SERVERNAMES] [-asn SERVERNAMES] [-x PRIVATE KEY] [-sid [SHORTIDS]] [-rsid] [-asid SHORTIDS]
 #
 # Options:
 #   -h, --help                    Display help message.
@@ -19,9 +19,9 @@
 #   -sn, --server-names           Set server names, e.g. xxx.com,www.xxx.com
 #   -asn, --append-server-names   Append server names, e.g. xxx.com,www.xxx.com
 #   -x, --x25519                  Set x25519
-#   -sid, --shortIds              Set shortIds, e.g. 402a or fd,81d5,2d5ac952d7a7
+#   -sid, --shortIds              Set shortIds, e.g. -sid ; -sid 402a ; -sid fd,81d5,,2d5ac952d7a7
 #   -rsid, --reset-shortIds       Reset shortIds
-#   -asid, --append-shortIds      Append shortIds, e.g. 402a or fd,81d5,2d5ac952d7a7
+#   -asid, --append-shortIds      Append shortIds, e.g. -asid 402a ; -asid fd,81d5,,2d5ac952d7a7
 #
 # Explanation:
 # - All parameters, except for "tag" itself, should be used with the "tag" parameter. The "tag" parameter is used to find the inbound object in the inbounds array that contains the corresponding "tag". If the -t/--tag parameter is not used, the default value is "xray-script-xtls-reality".
