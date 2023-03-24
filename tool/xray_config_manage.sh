@@ -379,7 +379,7 @@ function set_server_names() {
 function reset_x25519() {
   local in_tag="${1}"
   local private_key="${2}"
-  if [ "${privateKey}" ]; then
+  if [ "${private_key}" ]; then
     jq --arg in_tag "${in_tag}" --arg private_key "${private_key}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.privateKey = $private_key else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
   else
     echo 'Error: x25519 private key not provided'
