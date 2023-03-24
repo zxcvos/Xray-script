@@ -404,6 +404,7 @@ function set_sid() {
   fi
   jq --arg in_tag "${in_tag}" --argjson sids "${sids_list}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.shortIds += $sids else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
   jq --arg in_tag "${in_tag}" --argjson sids "${sids_list}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.shortIds = (.streamSettings.realitySettings.shortIds | unique) else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+  jq --arg in_tag "${in_tag}" --argjson sids "${sids_list}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.shortIds = (.streamSettings.realitySettings.shortIds | sort_by(length)) else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
 }
 
 function reset_sid() {
