@@ -61,6 +61,7 @@ declare setServerNames=''
 declare appendServerNames=''
 declare x25519PrivateKey=''
 declare isResetShortIds=0
+declare isSetShortIds=0
 declare setShortIds=''
 declare appendShortIds=''
 
@@ -150,9 +151,11 @@ while [[ $# -ge 1 ]]; do
     ;;
   -sid | --shortIds)
     shift
-    (printf "%s" "${1}" | grep -Eq "${op_regex}" || [ -z "$1" ]) && echo 'Error: shortIds not provided' && exit 1
-    setShortIds="$1"
-    shift
+    isSetShortIds=1
+    if printf "%s" "${1}" | grep -Evq "${op_regex}"; then
+      setShortIds="$1"
+      shift
+    fi
     ;;
   -rsid | --reset-shortIds)
     shift
@@ -255,6 +258,7 @@ function set_listen() {
     echo "Invalid IPv4 address format: ${in_listen}"
     echo "Invalid IPv6 address format: ${in_listen}"
     echo "Invalid UDS file path or abstract socket format: ${in_listen}"
+    exit 1
   fi
 }
 
@@ -266,6 +270,7 @@ function set_port() {
     jq --arg in_tag "${in_tag}" --argjson in_port ${in_port} '.inbounds |= map(if .tag == $in_tag then .port = $in_port else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
   else
     echo "Error: Please enter a valid port number between 1-65535"
+    exit 1
   fi
 }
 
@@ -279,6 +284,7 @@ function select_proto() {
     jq --arg in_tag "${in_tag}" --arg in_proto "${in_proto}" '.inbounds |= map(if .tag == $in_tag then .protocol = $in_proto else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
   else
     echo "Error: Please enter a valid protocol list index between 1-${#proto_list[@]}"
+    exit 1
   fi
 }
 
@@ -310,6 +316,7 @@ function select_network() {
     esac
   else
     echo "Error: Please enter a valid network list index between 1-${#network_list[@]}"
+    exit 1
   fi
 }
 
@@ -324,6 +331,7 @@ function set_dest() {
     jq --arg in_tag "${in_tag}" --arg dest "${dest}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.dest = $dest else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
   else
     echo "Error: Please enter a valid domain name or socket path"
+    exit 1
   fi
 }
 
@@ -337,11 +345,12 @@ function set_server_names() {
   done
   sns_list=$(printf '%s' "${sns_list}" | jq -R -s -c 'split(",") | map(select(length > 0))')
   if [ ${sns_list} != '[]' ]; then
-    [ ${is_append} -eq 0 ] &&  jq --arg in_tag "${in_tag}" --argjson sns "${sns_list}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.serverNames = [] else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+    [ ${is_append} -eq 0 ] && jq --arg in_tag "${in_tag}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.serverNames = [] else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
     jq --arg in_tag "${in_tag}" --argjson sns "${sns_list}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.serverNames += $sns else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
-    [ ${is_append} -eq 1 ] &&  jq --arg in_tag "${in_tag}" --argjson sns "${sns_list}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.serverNames = (.streamSettings.realitySettings.serverNames | unique) else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+    [ ${is_append} -eq 1 ] && jq --arg in_tag "${in_tag}" --argjson sns "${sns_list}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.serverNames = (.streamSettings.realitySettings.serverNames | unique) else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
   else
     echo "Error: Please enter a valid domain name, e.g. xxx.com,www.xxx.com"
+    exit 1
   fi
 }
 
@@ -352,7 +361,27 @@ function reset_x25519() {
     jq --arg in_tag "${in_tag}" --arg private_key "${private_key}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.privateKey = $private_key else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
   else
     echo 'Error: x25519 private key not provided'
+    exit 1
   fi
+}
+
+function set_sid() {
+  local in_tag="${1}"
+  local is_append="${2}"
+  local sids_str="${3}"
+  local sids_list=''
+  for sid in $(printf '%s' "${sids_str}" | jq -R -s -c -r 'split(",") | .[]'); do
+    [ $((${#sid} % 2)) -eq 0 ] && sids_list+="${sid},"
+  done
+  sids_list=$(printf '%s' "${sids_list}" | jq -R -s -c 'split(",")')
+  if [ ${is_append} -eq 0 ]; then
+    jq --arg in_tag "${in_tag}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.shortIds = [""] else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+  elif [ ${sids_list} == '[]' ]; then
+    echo "Error: Please enter a valid shortIds, e.g. 402a or fd,81d5,2d5ac952d7a7"
+    exit 1
+  fi
+  jq --arg in_tag "${in_tag}" --argjson sids "${sids_list}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.shortIds += $sids else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+  jq --arg in_tag "${in_tag}" --argjson sids "${sids_list}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.shortIds = (.streamSettings.realitySettings.shortIds | unique) else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
 }
 
 function reset_sid() {
@@ -361,7 +390,7 @@ function reset_sid() {
   local sid_len=0
   local sid=''
   sids_len=$(jq --arg in_tag "${in_tag}" '.inbounds[] | select(.tag == $in_tag) | .streamSettings.realitySettings.shortIds | length' "${configPath}")
-  if [ ${sids_len} -eq 0 ]; then
+  if [ ${sids_len} -gt 0 ]; then
     for i in $(seq 1 ${sids_len}); do
       sid_len=$(jq --arg in_tag "${in_tag}" --argjson i $((i - 1)) '.inbounds[] | select(.tag == $in_tag) | .streamSettings.realitySettings.shortIds[$i] | length' "${configPath}")
       sid=$(head -c 32 /dev/urandom | md5sum | head -c ${sid_len})
@@ -369,6 +398,7 @@ function reset_sid() {
     done
   else
     echo 'Error: shortIds is empty'
+    exit 1
   fi
 }
 
@@ -408,6 +438,14 @@ if [ "${x25519PrivateKey}" ]; then
   reset_x25519 "${matchTag}" "${x25519PrivateKey}"
 fi
 
+if [ ${isSetShortIds} -eq 1 ]; then
+  set_sid "${matchTag}" 0 "${setShortIds}"
+fi
+
 if [ ${isResetShortIds} -eq 1 ]; then
   reset_sid "${matchTag}"
+fi
+
+if [ "${appendShortIds}" ]; then
+  set_sid "${matchTag}" 1 "${appendShortIds}"
 fi
