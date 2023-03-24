@@ -3,7 +3,7 @@
 # This script is used to manage xray configuration
 #
 # Usage:
-#   ./xray_config_manage.sh [-t TAG] [-l [LISTEN]] [-p [PORT]] [-e EMAIL] [-prcl [PROTOCOL]] [-u [UUID]] [-n [NETWORK]] [-d DEST] [-sn SERVERNAMES] [-x PRIVATE KEY] [-sid]
+#   ./xray_config_manage.sh [-t TAG] [-l [LISTEN]] [-p [PORT]] [-e EMAIL] [-prcl [PROTOCOL]] [-u [UUID]] [-n [NETWORK]] [-d DEST] [-sn SERVERNAMES] [-asn SERVERNAMES] [-x PRIVATE KEY] [-sid SHORTIDS] [-rsid] [-asid SHORTIDS]
 #
 # Options:
 #   -h, --help                    Display help message.
@@ -18,8 +18,10 @@
 #   -d, --dest                    Set dest
 #   -sn, --server-names           Set server names, e.g. xxx.com,www.xxx.com
 #   -asn, --append-server-names   Append server names, e.g. xxx.com,www.xxx.com
-#   -x, --x25519                  Reset x25519
+#   -x, --x25519                  Set x25519
+#   -sid, --shortIds              Set shortIds, e.g. 402a or fd,81d5,2d5ac952d7a7
 #   -rsid, --reset-shortIds       Reset shortIds
+#   -asid, --append-shortIds      Append shortIds, e.g. 402a or fd,81d5,2d5ac952d7a7
 #
 # Explanation:
 # - All parameters, except for "tag" itself, should be used with the "tag" parameter. The "tag" parameter is used to find the inbound object in the inbounds array that contains the corresponding "tag". If the -t/--tag parameter is not used, the default value is "xray-script-xtls-reality".
@@ -37,7 +39,7 @@
 # Version: 0.1
 # Date: 2023-03-21
 
-readonly op_regex='^(^--(help|tag|listen|port|protocol|email|uuid|network|dest|(append-)?server-names|x25519|reset-shortIds)$)|(^-(prcl|a?sn|rsid|[htpeundxl])$)$'
+readonly op_regex='^(^--(help|tag|listen|port|protocol|email|uuid|network|dest|(append-)?server-names|x25519|((reset|append)-)?shortIds)$)|(^-(prcl|a?sn|(r|a)?sid|[htpeundxl])$)$'
 readonly proto_list=('vless')
 readonly network_list=('tcp' 'h2' 'grpc')
 
@@ -59,6 +61,8 @@ declare setServerNames=''
 declare appendServerNames=''
 declare x25519PrivateKey=''
 declare isResetShortIds=0
+declare setShortIds=''
+declare appendShortIds=''
 
 if [ $# -eq 0 ]; then
   set -- '-h'
@@ -144,9 +148,21 @@ while [[ $# -ge 1 ]]; do
     x25519PrivateKey="$1"
     shift
     ;;
+  -sid | --shortIds)
+    shift
+    (printf "%s" "${1}" | grep -Eq "${op_regex}" || [ -z "$1" ]) && echo 'Error: shortIds not provided' && exit 1
+    setShortIds="$1"
+    shift
+    ;;
   -rsid | --reset-shortIds)
     shift
     isResetShortIds=1
+    ;;
+  -asid | --append-shortIds)
+    shift
+    (printf "%s" "${1}" | grep -Eq "${op_regex}" || [ -z "$1" ]) && echo 'Error: shortIds not provided' && exit 1
+    appendShortIds="$1"
+    shift
     ;;
   -h | --help)
     echo
