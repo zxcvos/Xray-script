@@ -258,9 +258,6 @@ function read_port() {
 function read_uuid() {
   _info '自定义输入的 uuid ，如果不是标准格式，将会使用 xray uuid -i "自定义字符串" 进行 UUIDv5 映射后填入配置'
   read -p "请输入自定义 UUID, 默认则自动生成: " in_uuid
-  if printf "%s" ${in_uuid} | grep -Evq '^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$'; then
-    in_uuid="$(xray uuid -i "${in_uuid}")"
-  fi
 }
 
 function check_os() {
