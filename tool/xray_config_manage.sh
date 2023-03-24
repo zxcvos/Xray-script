@@ -195,6 +195,19 @@ while [[ $# -ge 1 ]]; do
   esac
 done
 
+function _exists() {
+  local cmd="$1"
+  if eval type type >/dev/null 2>&1; then
+    eval type "$cmd" >/dev/null 2>&1
+  elif command >/dev/null 2>&1; then
+    command -v "$cmd" >/dev/null 2>&1
+  else
+    which "$cmd" >/dev/null 2>&1
+  fi
+  local rt=$?
+  return ${rt}
+}
+
 function is_digit() {
   local input=${1}
   if [[ "${input}" =~ ^[0-9]+$ ]]; then
@@ -437,6 +450,11 @@ function reset_sid() {
     exit 1
   fi
 }
+
+if ! _exists 'jq' || ! _exists 'xray'; then
+  echo 'Error: jq or Xray not found, please install jq and Xray first'
+  exit
+fi
 
 if ! is_config_path "${configPath}"; then
   echo 'Error: Please use a full Xray configuration file path'
