@@ -255,6 +255,14 @@ function read_port() {
   done
 }
 
+function read_uuid() {
+  _info '自定义输入的 uuid ，如果不是标准格式，将会使用 xray uuid -i "自定义字符串" 进行 UUIDv5 映射后填入配置'
+  read -p "请输入自定义 UUID, 默认则自动生成: " in_uuid
+  if printf "%s" ${in_uuid} | grep -Evq '^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$'; then
+    in_uuid="$(xray uuid -i "${in_uuid}")"
+  fi
+}
+
 function check_os() {
   [ -z "$(_os)" ] && _error "Not supported OS"
   case "$(_os)" in
@@ -330,7 +338,7 @@ function config_xray() {
   jq --arg publicKey "${xs_public_key}" '.xray.publicKey = $publicKey' /usr/local/etc/xray-script/config.json >/usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray-script/config.json
   # Xray-core config.json
   "${xray_config_manage}" --path ${HOME}/config.json -p ${new_port}
-  "${xray_config_manage}" --path ${HOME}/config.json -u
+  "${xray_config_manage}" --path ${HOME}/config.json -u ${in_uuid}
   "${xray_config_manage}" --path ${HOME}/config.json -d "$(jq -r '.xray.dest' /usr/local/etc/xray-script/config.json | grep -Eoi '([a-zA-Z0-9](\-?[a-zA-Z0-9])*\.)+[a-zA-Z]{2,}')"
   "${xray_config_manage}" --path ${HOME}/config.json -sn "$(jq -c -r '.xray | .serverNames[.dest] | .[]' /usr/local/etc/xray-script/config.json | tr '\n' ',')"
   "${xray_config_manage}" --path ${HOME}/config.json -x "${xs_private_key}"
@@ -370,6 +378,7 @@ function show_config() {
 }
 
 function menu() {
+  check_os
   clear
   echo -e "--------------- Xray-script ---------------"
   echo -e " Version      : ${GREEN}v2023-03-15${NC}(${RED}beta${NC})"
@@ -402,8 +411,8 @@ function menu() {
     _error "未使用 Xray-script 进行安装"
   fi
   if [ -d /usr/local/etc/xray-script ] && ([ ${idx} -gt 102 ] || [ ${idx} -lt 108 ]); then
-   wget -qO ${xray_config_manage} https://raw.githubusercontent.com/zxcvos/Xray-script/main/tool/xray_config_manage.sh
-   chmod a+x ${xray_config_manage}
+    wget -qO ${xray_config_manage} https://raw.githubusercontent.com/zxcvos/Xray-script/main/tool/xray_config_manage.sh
+    chmod a+x ${xray_config_manage}
   fi
   case "${idx}" in
   1)
@@ -414,6 +423,7 @@ function menu() {
       chmod a+x ${xray_config_manage}
       local xs_port=$(jq '.xray.port' /usr/local/etc/xray-script/config.json)
       read_port "xray config 配置默认使用: ${xs_port}" "${xs_port}"
+      read_uuid
       select_dest
       install_dependencies
       install_update_xray
@@ -455,8 +465,9 @@ function menu() {
     bash /usr/local/etc/xray-script/traffic.sh
     ;;
   103)
+    read_uuid
     _info "正在修改用户 id"
-    "${xray_config_manage}" -u
+    "${xray_config_manage}" -u "${in_uuid}"
     _info "已成功修改用户 id"
     _systemctl "restart" "xray"
     show_config
