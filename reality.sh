@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# System Required:  CentOS 7+, Debian10+, Ubuntu16+
+# System Required:  CentOS 7+, Debian9+, Ubuntu16+
 # Description:      Script to Xray manage
 #
 # Copyright (C) 2023 zxcvos
@@ -9,12 +9,12 @@
 # Xray-core: https://github.com/XTLS/Xray-core
 # REALITY: https://github.com/XTLS/REALITY
 # Xray-examples: https://github.com/chika0801/Xray-examples
-#
 
 readonly RED='\033[1;31;31m'
 readonly GREEN='\033[1;31;32m'
 readonly YELLOW='\033[1;31;33m'
 readonly NC='\033[0m'
+readonly xray_config_manage='/usr/local/etc/xray-script/xray_config_manage.sh'
 
 declare domain
 declare domain_path
@@ -242,6 +242,7 @@ function read_port() {
     echo "${prompt}"
     read -p "请输入自定义的端口(1-65535), 默认不修改: " new_port
     if [[ "${new_port}" == "" || ${new_port} -eq ${cur_port} ]]; then
+      new_port=${cur_port}
       _info "不修改，继续使用原端口: ${cur_port}"
       break
     fi
@@ -261,7 +262,7 @@ function check_os() {
     [ -n "$(_os_ver)" -a "$(_os_ver)" -lt 16 ] && _error "Not supported OS, please change to Ubuntu 16+ and try again."
     ;;
   debian)
-    [ -n "$(_os_ver)" -a "$(_os_ver)" -lt 10 ] && _error "Not supported OS, please change to Debian 10+ and try again."
+    [ -n "$(_os_ver)" -a "$(_os_ver)" -lt 9 ] && _error "Not supported OS, please change to Debian 9+ and try again."
     ;;
   centos)
     [ -n "$(_os_ver)" -a "$(_os_ver)" -lt 7 ] && _error "Not supported OS, please change to CentOS 7+ and try again."
@@ -320,38 +321,20 @@ function service_xray() {
 
 function config_xray() {
   _info "正在配置 xray config.json"
-  wget -O ${HOME}/config.json https://raw.githubusercontent.com/zxcvos/Xray-script/main/VLESS-XTLS-uTLS-REALITY/server.json
+  "${xray_config_manage}" --path ${HOME}/config.json --download
   local xray_x25519=$(xray x25519)
   local xs_private_key=$(echo ${xray_x25519} | awk '{print $3}')
   local xs_public_key=$(echo ${xray_x25519} | awk '{print $6}')
-  local xs_inbound=$(jq '.inbounds[] | select(.tag == "xray-script-xtls-reality")' ${HOME}/config.json)
-  local xs_dest=$(jq -r '.xray.dest' /usr/local/etc/xray-script/config.json)
-  local xs_serverNames=$(jq -c '.xray | .serverNames[.dest]' /usr/local/etc/xray-script/config.json)
   # Xray-script config.json
   jq --arg privateKey "${xs_private_key}" '.xray.privateKey = $privateKey' /usr/local/etc/xray-script/config.json >/usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray-script/config.json
   jq --arg publicKey "${xs_public_key}" '.xray.publicKey = $publicKey' /usr/local/etc/xray-script/config.json >/usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray-script/config.json
   # Xray-core config.json
-  # id
-  c_len=$(echo "${xs_inbound}" | jq '.settings.clients | length')
-  for i in $(seq 1 ${c_len}); do
-    xs_inbound=$(echo "${xs_inbound}" | jq --argjson i $((${i} - 1)) --arg uuid "$(cat /proc/sys/kernel/random/uuid)" '.settings.clients[$i].id = $uuid')
-  done
-  # dest
-  xs_inbound=$(echo "${xs_inbound}" | jq --arg dest ${xs_dest%%/*}:443 '.streamSettings.realitySettings.dest = $dest')
-  # serverNames
-  xs_inbound=$(echo "${xs_inbound}" | jq --argjson sn ${xs_serverNames} '.streamSettings.realitySettings.serverNames = $sn')
-  # privateKey
-  xs_inbound=$(echo "${xs_inbound}" | jq --arg privateKey "${xs_private_key}" '.streamSettings.realitySettings.privateKey = $privateKey')
-  # shortIds
-  s_len=$(echo "${xs_inbound}" | jq '.streamSettings.realitySettings.shortIds | length')
-  for i in $(seq 1 ${s_len}); do
-    sId_len=$(echo "${xs_inbound}" | jq --argjson i $((${i} - 1)) '.streamSettings.realitySettings.shortIds[$i] | length')
-    sId=$(head -c 20 /dev/urandom | md5sum | head -c ${sId_len})
-    xs_inbound=$(echo "${xs_inbound}" | jq --argjson i $((${i} - 1)) --arg shortId "${sId}" '.streamSettings.realitySettings.shortIds[$i] = $shortId')
-  done
-  xs_inbound=$(echo "${xs_inbound}" | jq -c '.')
-  local xs_inbounds=$(jq -c --argjson inbound ${xs_inbound} '.inbounds | map(if .tag == "xray-script-xtls-reality" then . = $inbound else . end)' ${HOME}/config.json)
-  jq --argjson inbounds ${xs_inbounds} '.inbounds = $inbounds' ${HOME}/config.json >${HOME}/new.json && mv -f ${HOME}/new.json ${HOME}/config.json
+  "${xray_config_manage}" --path ${HOME}/config.json -p ${new_port}
+  "${xray_config_manage}" --path ${HOME}/config.json -u
+  "${xray_config_manage}" --path ${HOME}/config.json -d "$(jq -r '.xray.dest' /usr/local/etc/xray-script/config.json | grep -Eoi '([a-zA-Z0-9](\-?[a-zA-Z0-9])*\.)+[a-zA-Z]{2,}')"
+  "${xray_config_manage}" --path ${HOME}/config.json -sn "$(jq -c -r '.xray | .serverNames[.dest] | .[]' /usr/local/etc/xray-script/config.json | tr '\n' ',')"
+  "${xray_config_manage}" --path ${HOME}/config.json -x "${xs_private_key}"
+  "${xray_config_manage}" --path ${HOME}/config.json -rsid
   mv -f ${HOME}/config.json /usr/local/etc/xray/config.json
   _systemctl "restart" "xray"
 }
@@ -418,11 +401,17 @@ function menu() {
   if [[ ! -d /usr/local/etc/xray-script && (${idx} -ne 0 && ${idx} -ne 1 && ${idx} -lt 201) ]]; then
     _error "未使用 Xray-script 进行安装"
   fi
+  if [ -d /usr/local/etc/xray-script ] && ([ ${idx} -gt 102 ] || [ ${idx} -lt 108 ]); then
+   wget -qO ${xray_config_manage} https://raw.githubusercontent.com/zxcvos/Xray-script/main/tool/xray_config_manage.sh
+   chmod a+x ${xray_config_manage}
+  fi
   case "${idx}" in
   1)
     if [ ! -d /usr/local/etc/xray-script ]; then
       mkdir -p /usr/local/etc/xray-script
       wget -O /usr/local/etc/xray-script/config.json https://raw.githubusercontent.com/zxcvos/Xray-script/main/config/config.json
+      wget -O ${xray_config_manage} https://raw.githubusercontent.com/zxcvos/Xray-script/main/tool/xray_config_manage.sh
+      chmod a+x ${xray_config_manage}
       local xs_port=$(jq '.xray.port' /usr/local/etc/xray-script/config.json)
       read_port "xray config 配置默认使用: ${xs_port}" "${xs_port}"
       select_dest
@@ -467,16 +456,7 @@ function menu() {
     ;;
   103)
     _info "正在修改用户 id"
-    local xs_inbound=$(jq '.inbounds[] | select(.tag == "xray-script-xtls-reality")' /usr/local/etc/xray/config.json)
-    # Xray-core config.json
-    # id
-    c_len=$(echo "${xs_inbound}" | jq '.settings.clients | length')
-    for i in $(seq 1 ${c_len}); do
-      xs_inbound=$(echo "${xs_inbound}" | jq --argjson i $((${i} - 1)) --arg uuid "$(cat /proc/sys/kernel/random/uuid)" '.settings.clients[$i].id = $uuid')
-    done
-    xs_inbound=$(echo "${xs_inbound}" | jq -c '.')
-    local xs_inbounds=$(jq -c --argjson inbound ${xs_inbound} '.inbounds | map(if .tag == "xray-script-xtls-reality" then . = $inbound else . end)' /usr/local/etc/xray/config.json)
-    jq --argjson inbounds ${xs_inbounds} '.inbounds = $inbounds' /usr/local/etc/xray/config.json >/usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray/config.json
+    "${xray_config_manage}" -u
     _info "已成功修改用户 id"
     _systemctl "restart" "xray"
     show_config
@@ -484,17 +464,8 @@ function menu() {
   104)
     _info "正在修改 dest 与 serverNames"
     select_dest
-    local xs_inbound=$(jq '.inbounds[] | select(.tag == "xray-script-xtls-reality")' /usr/local/etc/xray/config.json)
-    local xs_dest=$(jq -r '.xray.dest' /usr/local/etc/xray-script/config.json)
-    local xs_serverNames=$(jq -c '.xray | .serverNames[.dest]' /usr/local/etc/xray-script/config.json)
-    # Xray-core config.json
-    # dest
-    xs_inbound=$(echo "${xs_inbound}" | jq --arg dest ${xs_dest%%/*}:443 '.streamSettings.realitySettings.dest = $dest')
-    # serverNames
-    xs_inbound=$(echo "${xs_inbound}" | jq --argjson sn ${xs_serverNames} '.streamSettings.realitySettings.serverNames = $sn')
-    xs_inbound=$(echo "${xs_inbound}" | jq -c '.')
-    local xs_inbounds=$(jq -c --argjson inbound ${xs_inbound} '.inbounds | map(if .tag == "xray-script-xtls-reality" then . = $inbound else . end)' /usr/local/etc/xray/config.json)
-    jq --argjson inbounds ${xs_inbounds} '.inbounds = $inbounds' /usr/local/etc/xray/config.json >/usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray/config.json
+    "${xray_config_manage}" -d "$(jq -r '.xray.dest' /usr/local/etc/xray-script/config.json | grep -Eoi '([a-zA-Z0-9](\-?[a-zA-Z0-9])*\.)+[a-zA-Z]{2,}')"
+    "${xray_config_manage}" -sn "$(jq -c -r '.xray | .serverNames[.dest] | .[]' /usr/local/etc/xray-script/config.json | tr '\n' ',')"
     _info "已成功修改 dest 与 serverNames"
     _systemctl "restart" "xray"
     show_config
@@ -504,34 +475,18 @@ function menu() {
     local xray_x25519=$(xray x25519)
     local xs_private_key=$(echo ${xray_x25519} | awk '{print $3}')
     local xs_public_key=$(echo ${xray_x25519} | awk '{print $6}')
-    local xs_inbound=$(jq '.inbounds[] | select(.tag == "xray-script-xtls-reality")' /usr/local/etc/xray/config.json)
     # Xray-script config.json
     jq --arg privateKey "${xs_private_key}" '.xray.privateKey = $privateKey' /usr/local/etc/xray-script/config.json >/usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray-script/config.json
     jq --arg publicKey "${xs_public_key}" '.xray.publicKey = $publicKey' /usr/local/etc/xray-script/config.json >/usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray-script/config.json
     # Xray-core config.json
-    # privateKey
-    xs_inbound=$(echo "${xs_inbound}" | jq --arg privateKey "${xs_private_key}" '.streamSettings.realitySettings.privateKey = $privateKey')
-    xs_inbound=$(echo "${xs_inbound}" | jq -c '.')
-    local xs_inbounds=$(jq -c --argjson inbound ${xs_inbound} '.inbounds | map(if .tag == "xray-script-xtls-reality" then . = $inbound else . end)' /usr/local/etc/xray/config.json)
-    jq --argjson inbounds ${xs_inbounds} '.inbounds = $inbounds' /usr/local/etc/xray/config.json >/usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray/config.json
+    "${xray_config_manage}" -x "${xs_private_key}"
     _info "已成功修改 x25519 key"
     _systemctl "restart" "xray"
     show_config
     ;;
   106)
     _info "正在修改 shortIds"
-    local xs_inbound=$(jq '.inbounds[] | select(.tag == "xray-script-xtls-reality")' /usr/local/etc/xray/config.json)
-    # Xray-core config.json
-    # shortIds
-    local s_len=$(echo "${xs_inbound}" | jq '.streamSettings.realitySettings.shortIds | length')
-    for i in $(seq 1 ${s_len}); do
-      sId_len=$(echo "${xs_inbound}" | jq --argjson i $((${i} - 1)) '.streamSettings.realitySettings.shortIds[$i] | length')
-      sId=$(head -c 20 /dev/urandom | md5sum | head -c ${sId_len})
-      xs_inbound=$(echo "${xs_inbound}" | jq --argjson i $((${i} - 1)) --arg shortId "${sId}" '.streamSettings.realitySettings.shortIds[$i] = $shortId')
-    done
-    xs_inbound=$(echo "${xs_inbound}" | jq -c '.')
-    local xs_inbounds=$(jq -c --argjson inbound ${xs_inbound} '.inbounds | map(if .tag == "xray-script-xtls-reality" then . = $inbound else . end)' /usr/local/etc/xray/config.json)
-    jq --argjson inbounds ${xs_inbounds} '.inbounds = $inbounds' /usr/local/etc/xray/config.json >/usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray/config.json
+    "${xray_config_manage}" -rsid
     _info "已成功修改 shortIds"
     _systemctl "restart" "xray"
     show_config
@@ -540,7 +495,7 @@ function menu() {
     local xs_port=$(jq '.inbounds[] | select(.tag == "xray-script-xtls-reality") | .port' /usr/local/etc/xray/config.json)
     read_port "当前 xray 监听端口为: ${xs_port}" "${xs_port}"
     if [[ "${new_port}" && ${new_port} -ne ${xs_port} ]]; then
-      sed -i "s/${xs_port}/${new_port}/" /usr/local/etc/xray/config.json
+      "${xray_config_manage}" -p ${new_port}
       _info "当前 xray 监听端口已修改为: ${new_port}"
       _systemctl "restart" "xray"
       show_config
