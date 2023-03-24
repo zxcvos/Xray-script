@@ -453,7 +453,7 @@ function reset_sid() {
 
 if ! _exists 'jq' || ! _exists 'xray'; then
   echo 'Error: jq or Xray not found, please install jq and Xray first'
-  exit
+  exit 1
 fi
 
 if ! is_config_path "${configPath}"; then
