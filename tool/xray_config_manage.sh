@@ -419,7 +419,7 @@ function set_sid() {
   local sids_str="${3}"
   local sids_list=''
   for sid in $(printf '%s' "${sids_str}" | jq -R -s -c -r 'split(",") | .[]'); do
-    [ $((${#sid} % 2)) -eq 0 ] && sids_list+="${sid},"
+    [ $((${#sid} % 2)) -eq 0 ] && [ ${#sid} -le 16 ] && sids_list+="${sid},"
   done
   sids_list=$(printf '%s' "${sids_list}" | jq -R -s -c 'split(",")')
   if [ ${is_append} -eq 0 ]; then
