@@ -442,7 +442,7 @@ function reset_sid() {
   if [ ${sids_len} -gt 0 ]; then
     for i in $(seq 1 ${sids_len}); do
       sid_len=$(jq --arg in_tag "${in_tag}" --argjson i $((i - 1)) '.inbounds[] | select(.tag == $in_tag) | .streamSettings.realitySettings.shortIds[$i] | length' "${configPath}")
-      sid=$(head -c 32 /dev/urandom | md5sum | head -c ${sid_len})
+      sid=$(openssl rand -hex 8 $((${sid_len} / 2)))
       jq --arg in_tag "${in_tag}" --arg sid "${sid}" --argjson i $((i - 1)) '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.shortIds[$i] = $sid else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
     done
   else
