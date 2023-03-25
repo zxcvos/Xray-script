@@ -396,6 +396,7 @@ function menu() {
   echo -e "${GREEN}105.${NC} 修改 x25519 key"
   echo -e "${GREEN}106.${NC} 修改 shortIds"
   echo -e "${GREEN}107.${NC} 修改 xray 监听端口"
+  echo -e "${GREEN}108.${NC} 刷新已有的 shortIds"
   echo -e "----------------- 其他选项 ----------------"
   echo -e "${GREEN}201.${NC} 更新至最新稳定版内核"
   echo -e "${GREEN}202.${NC} 卸载多余内核"
@@ -407,7 +408,7 @@ function menu() {
   if [[ ! -d /usr/local/etc/xray-script && (${idx} -ne 0 && ${idx} -ne 1 && ${idx} -lt 201) ]]; then
     _error "未使用 Xray-script 进行安装"
   fi
-  if [ -d /usr/local/etc/xray-script ] && ([ ${idx} -gt 102 ] || [ ${idx} -lt 108 ]); then
+  if [ -d /usr/local/etc/xray-script ] && ([ ${idx} -gt 102 ] || [ ${idx} -lt 109 ]); then
     wget -qO ${xray_config_manage} https://raw.githubusercontent.com/zxcvos/Xray-script/main/tool/xray_config_manage.sh
     chmod a+x ${xray_config_manage}
   fi
@@ -493,8 +494,11 @@ function menu() {
     show_config
     ;;
   106)
+    _info "shortId 值定义: 接受一个十六进制数值 ，长度为 2 的倍数，长度上限为 16"
+    _info "shortId 列表默认为值为[\"\"]，若有此项，客户端 shortId 可为空"
+    read -p "请输入自定义 shortIds 值，多个值以英文逗号进行分隔: " sid_str
     _info "正在修改 shortIds"
-    "${xray_config_manage}" -rsid
+    "${xray_config_manage}" -sid "${sid_str}"
     _info "已成功修改 shortIds"
     _systemctl "restart" "xray"
     show_config
@@ -508,6 +512,13 @@ function menu() {
       _systemctl "restart" "xray"
       show_config
     fi
+    ;;
+  108)
+    _info "正在修改 shortIds"
+    "${xray_config_manage}" -rsid
+    _info "已成功修改 shortIds"
+    _systemctl "restart" "xray"
+    show_config
     ;;
   201)
     bash <(wget -qO- https://raw.githubusercontent.com/zxcvos/system-automation-scripts/main/update-kernel.sh)
