@@ -414,16 +414,16 @@ function menu() {
   case "${idx}" in
   1)
     if [ ! -d /usr/local/etc/xray-script ]; then
-      install_dependencies
       mkdir -p /usr/local/etc/xray-script
       wget -O /usr/local/etc/xray-script/config.json https://raw.githubusercontent.com/zxcvos/Xray-script/main/config/config.json
       wget -O ${xray_config_manage} https://raw.githubusercontent.com/zxcvos/Xray-script/main/tool/xray_config_manage.sh
       chmod a+x ${xray_config_manage}
+      install_dependencies
+      install_update_xray
       local xs_port=$(jq '.xray.port' /usr/local/etc/xray-script/config.json)
       read_port "xray config 配置默认使用: ${xs_port}" "${xs_port}"
       read_uuid
       select_dest
-      install_update_xray
       config_xray
       show_config
     fi
