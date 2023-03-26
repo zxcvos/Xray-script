@@ -397,6 +397,7 @@ function menu() {
   echo -e "${GREEN}106.${NC} 修改 shortIds"
   echo -e "${GREEN}107.${NC} 修改 xray 监听端口"
   echo -e "${GREEN}108.${NC} 刷新已有的 shortIds"
+  echo -e "${GREEN}109.${NC} 添加自定义的 shortIds"
   echo -e "----------------- 其他选项 ----------------"
   echo -e "${GREEN}201.${NC} 更新至最新稳定版内核"
   echo -e "${GREEN}202.${NC} 卸载多余内核"
@@ -517,6 +518,17 @@ function menu() {
     _info "正在修改 shortIds"
     "${xray_config_manage}" -rsid
     _info "已成功修改 shortIds"
+    _systemctl "restart" "xray"
+    show_config
+    ;;
+  109)
+    until [ ${#sid_str} -gt 0 ] && [ ${#sid_str} -le 16 ] && [ $((${#sid_str} % 2)) -eq 0 ]; do
+      _info "shortId 值定义: 接受一个十六进制数值 ，长度为 2 的倍数，长度上限为 16"
+      read -p "请输入自定义 shortIds 值，不能为空，多个值以英文逗号进行分隔: " sid_str
+    done
+    _info "正在添加自定义 shortIds"
+    "${xray_config_manage}" -asid "${sid_str}"
+    _info "已成功添加自定义 shortIds"
     _systemctl "restart" "xray"
     show_config
     ;;
