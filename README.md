@@ -5,10 +5,10 @@
 * 实现 xray 监听端口的自填
 * 可自定义输入 UUID ，非标准 UUID 将使用 `Xray uuid -i "自定义字符串"` 进行映射转化为 UUIDv5
 * 实现 dest 的自选与自填
-* 实现自填 dest 的 TLSv1.3 与 H2 验证
-* 实现自填 dest 的 serverNames 自动获取
-* 实现自动获取的 serverNames 通配符域名与 CDN SNI 域名的过滤，dest 如果是子域名将会自动加入到 serverNames 中
-* 实现自填 dest 的 spiderX 的自定义显示，例如：自填 dest 为 `fmovies.to/home` 时，client config 会显示 `spiderX: /home`
+  * 实现自填 dest 的 TLSv1.3 与 H2 验证
+  * 实现自填 dest 的 serverNames 自动获取
+  * 实现自动获取的 serverNames 通配符域名与 CDN SNI 域名的过滤，dest 如果是子域名将会自动加入到 serverNames 中
+  * 实现自填 dest 的 spiderX 的自定义显示，例如：自填 dest 为 `fmovies.to/home` 时，client config 会显示 `spiderX: /home`
 * 默认配置禁回国流量、广告、bt
 * 实现 geo 文件的自动更新
 
