@@ -93,8 +93,8 @@ function _version_ge() {
 
 function _is_tlsv1_3_h2() {
   local check_url=$(echo $1 | grep -oE '[^/]+(\.[^/]+)+\b' | head -n 1)
-  local check_num=$(wget -qO- "https://${check_url}" | stdbuf -oL openssl s_client -connect "${check_url}:443" -tls1_3 -alpn h2 2>&1 | grep -Eoi '(TLSv1.3)|(^ALPN\s+protocol:\s+h2$)' | sort -u | wc -l)
-  if [[ ${check_num} -eq 2 ]]; then
+  local check_num=$(echo QUIT | stdbuf -oL openssl s_client -connect "${check_url}:443" -tls1_3 -alpn h2 2>&1 | grep -Eoi '(TLSv1.3)|(^ALPN\s+protocol:\s+h2$)|(X25519)' | sort -u | wc -l)
+  if [[ ${check_num} -eq 3 ]]; then
     return 0
   else
     return 1
@@ -196,7 +196,7 @@ function select_dest() {
       read_domain
       _info "正在检查 \"${domain}\" 是否支持 TLSv1.3 与 h2"
       if ! _is_tlsv1_3_h2 "${domain}"; then
-        _warn "\"${domain}\" 不支持 TLSv1.3 与 h2"
+        _warn "\"${domain}\" 不支持 TLSv1.3 或 h2 ，亦或者 Client Hello 不是 X25519"
         continue
       fi
       _info "\"${domain}\" 支持 TLSv1.3 与 h2"
