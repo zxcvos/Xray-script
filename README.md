@@ -3,6 +3,7 @@
 * 一个纯 Shell 编写的 REALITY 管理脚本
 * 使用 VLESS-XTLS-uTLS-REALITY 配置
 * 实现 xray 监听端口的自填
+* 可自定义输入 UUID ，非标准 UUID 将使用 `Xray uuid -i "自定义字符串"` 进行映射转化为 UUIDv5
 * 实现 dest 的自选与自填
 * 实现自填 dest 的 TLSv1.3 与 H2 验证
 * 实现自填 dest 的 serverNames 自动获取
