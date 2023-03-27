@@ -133,7 +133,7 @@ function _systemctl() {
     systemctl -q is-active ${server_name} || systemctl -q start ${server_name}
     systemctl -q is-enabled ${server_name} || systemctl -q enable ${server_name}
     sleep 2
-    systemctl -q is-active ${server_name} && _info "已启动 ${server_name} 服务"
+    systemctl -q is-active ${server_name} && _info "已启动 ${server_name} 服务" || _error "${server_name} 启动失败"
     ;;
   stop)
     _info "正在暂停 ${server_name} 服务"
@@ -147,7 +147,7 @@ function _systemctl() {
     systemctl -q is-active ${server_name} && systemctl -q restart ${server_name} || systemctl -q start ${server_name}
     systemctl -q is-enabled ${server_name} || systemctl -q enable ${server_name}
     sleep 2
-    systemctl -q is-active ${server_name} && _info "已重启 ${server_name} 服务"
+    systemctl -q is-active ${server_name} && _info "已重启 ${server_name} 服务" || _error "${server_name} 启动失败"
     ;;
   reload)
     _info "正在重载 ${server_name} 服务"
@@ -169,6 +169,27 @@ function _print_list() {
     hint="${p_list[$i - 1]}"
     echo -e "${GREEN}${i}${NC}) ${hint}"
   done
+}
+
+function select_data() {
+  local data_list=()
+  local index_list=()
+  local result_list=()
+  IFS=',' read -ra data_list <<<"${1}"
+  IFS=',' read -ra index_list <<<"${2}"
+  if [ ${#index_list[@]} -ne 0 ]; then
+    for i in "${index_list[@]}"; do
+      if _is_digit "${i}" && [ ${i} -ge 0 ] && [ ${i} -lt ${#data_list[@]} ]; then
+        result_list+=("${data_list[${i}]}")
+      fi
+    done
+  else
+    result_list=(${data_list[@]})
+  fi
+  if [ ${#result_list[@]} -eq 0 ]; then
+    result_list=(${data_list[@]})
+  fi
+  echo "${result_list[@]}"
 }
 
 function select_dest() {
@@ -396,16 +417,13 @@ function show_share_link() {
   local sl_spiderX='spx=%2F'
   local sl_descriptive_text='VLESS-XTLS-uTLS-REALITY'
   echo -e "--------------- share link ---------------"
-  for sl_id in ${sl_ids[@]}
-  do
+  for sl_id in ${sl_ids[@]}; do
     sl_uuid="${sl_id}"
-    for sl_serverName in ${sl_serverNames[@]}
-    do
+    for sl_serverName in ${sl_serverNames[@]}; do
       sl_sni="sni=${sl_serverName}"
       echo -e "---------- serverName ${sl_sni} ----------"
-      for sl_shortId in ${sl_shortIds[@]}
-      do
-        [ "${sl_shortId//\"}" != "" ] && sl_shortId="sid=${sl_shortId//\"}" || sl_shortId=""
+      for sl_shortId in ${sl_shortIds[@]}; do
+        [ "${sl_shortId//\"/}" != "" ] && sl_shortId="sid=${sl_shortId//\"/}" || sl_shortId=""
         sl="${sl_protocol}://${sl_uuid}@${sl_host}:${sl_port}?${sl_security}&${sl_flow}&${sl_fingerprint}&${sl_publicKey}&${sl_sni}&${sl_spiderX}&${sl_shortId}"
         echo "${sl%&}#${sl_descriptive_text}"
       done
@@ -502,8 +520,8 @@ function menu() {
     ;;
   101)
     show_config
-      read -p "是否生成分享链接[y/n]: " is_show_share_link
-      [[ ${is_show_share_link} =~ ^[Yy]$ ]] && show_share_link
+    read -p "是否生成分享链接[y/n]: " is_show_share_link
+    [[ ${is_show_share_link} =~ ^[Yy]$ ]] && show_share_link
     ;;
   102)
     [ -f /usr/local/etc/xray-script/traffic.sh ] || wget -O /usr/local/etc/xray-script/traffic.sh https://raw.githubusercontent.com/zxcvos/Xray-script/main/tool/traffic.sh
