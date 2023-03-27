@@ -388,7 +388,7 @@ function show_share_link() {
   # share link fields
   local sl_uuid=""
   local sl_security='security=reality'
-  local sl_flow='flow=xtls-rprx-direct'
+  local sl_flow='flow=xtls-rprx-vision'
   local sl_fingerprint='fp=chrome'
   local sl_publicKey="pbk=${sl_public_key}"
   local sl_sni=""
