@@ -502,6 +502,8 @@ function menu() {
     ;;
   101)
     show_config
+      read -p "是否生成分享链接[y/n]: " is_show_share_link
+      [[ ${is_show_share_link} =~ ^[Yy]$ ]] && show_share_link
     ;;
   102)
     [ -f /usr/local/etc/xray-script/traffic.sh ] || wget -O /usr/local/etc/xray-script/traffic.sh https://raw.githubusercontent.com/zxcvos/Xray-script/main/tool/traffic.sh
