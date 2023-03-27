@@ -374,6 +374,50 @@ function show_config() {
   echo -e "------------------------------------------"
 }
 
+function show_share_link() {
+  local sl=""
+  # share lnk contents
+  local sl_host=$(wget -qO- -t1 -T2 ipv4.icanhazip.com)
+  local sl_inbound=$(jq '.inbounds[] | select(.tag == "xray-script-xtls-reality")' /usr/local/etc/xray/config.json)
+  local sl_port=$(echo ${sl_inbound} | jq -r '.port')
+  local sl_protocol=$(echo ${sl_inbound} | jq -r '.protocol')
+  local sl_ids=$(echo ${sl_inbound} | jq -r '.settings.clients[] | .id')
+  local sl_public_key=$(jq -r '.xray.publicKey' /usr/local/etc/xray-script/config.json)
+  local sl_serverNames=$(echo ${sl_inbound} | jq -r '.streamSettings.realitySettings.serverNames[]')
+  local sl_shortIds=$(echo ${sl_inbound} | jq '.streamSettings.realitySettings.shortIds[]')
+  # share link fields
+  local sl_uuid=""
+  local sl_security='security=reality'
+  local sl_flow='flow=xtls-rprx-direct'
+  local sl_fingerprint='fp=chrome'
+  local sl_publicKey="pbk=${sl_public_key}"
+  local sl_sni=""
+  local sl_shortId=""
+  local sl_spiderX='spx=%2F'
+  local sl_descriptive_text='VLESS-XTLS-uTLS-REALITY'
+  echo -e "--------------- share link ---------------"
+  for sl_id in ${sl_ids[@]}
+  do
+    sl_uuid="${sl_id}"
+    for sl_serverName in ${sl_serverNames[@]}
+    do
+      sl_sni="sni=${sl_serverName}"
+      echo -e "---------- serverName ${sl_sni} ----------"
+      for sl_shortId in ${sl_shortIds[@]}
+      do
+        [ "${sl_shortId//\"}" != "" ] && sl_shortId="sid=${sl_shortId//\"}" || sl_shortId=""
+        sl="${sl_protocol}://${sl_uuid}@${sl_host}:${sl_port}?${sl_security}&${sl_flow}&${sl_fingerprint}&${sl_publicKey}&${sl_sni}&${sl_spiderX}&${sl_shortId}"
+        echo "${sl%&}#${sl_descriptive_text}"
+      done
+      echo -e "------------------------------------------------"
+    done
+  done
+  echo -e "------------------------------------------"
+  echo -e "${RED}此脚本仅供交流学习使用，请勿使用此脚本行违法之事。${NC}"
+  echo -e "${RED}网络非法外之地，行非法之事，必将接受法律制裁。${NC}"
+  echo -e "------------------------------------------"
+}
+
 function menu() {
   check_os
   clear
