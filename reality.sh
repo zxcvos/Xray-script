@@ -389,11 +389,16 @@ function show_config() {
   echo -e "ShortId     : ${xs_shortIds%,}"
   echo -e "SpiderX     : ${xs_spiderX}"
   echo -e "------------------------------------------"
-  echo -e "${RED}此脚本仅供交流学习使用，请勿使用此脚本行违法之事。${NC}"
-  echo -e "${RED}网络非法外之地，行非法之事，必将接受法律制裁。${NC}"
-  echo -e "------------------------------------------"
   read -p "是否生成分享链接[y/n]: " is_show_share_link
-  [[ ${is_show_share_link} =~ ^[Yy]$ ]] && show_share_link
+  echo
+  if [[ ${is_show_share_link} =~ ^[Yy]$ ]]; then
+    show_share_link
+  else
+    echo -e "------------------------------------------"
+    echo -e "${RED}此脚本仅供交流学习使用，请勿使用此脚本行违法之事。${NC}"
+    echo -e "${RED}网络非法外之地，行非法之事，必将接受法律制裁。${NC}"
+    echo -e "------------------------------------------"
+  fi
 }
 
 function show_share_link() {
@@ -479,10 +484,11 @@ function menu() {
   echo -e "-------------------------------------------"
   echo -e "${RED}0.${NC} 退出"
   read -rp "Choose: " idx
+  ! _is_digit "${idx}" && _error "请输入正确的选项值"
   if [[ ! -d /usr/local/etc/xray-script && (${idx} -ne 0 && ${idx} -ne 1 && ${idx} -lt 201) ]]; then
     _error "未使用 Xray-script 进行安装"
   fi
-  if [ -d /usr/local/etc/xray-script ] && ([ ${idx} -gt 102 ] || [ ${idx} -lt 109 ]); then
+  if [ -d /usr/local/etc/xray-script ] && ([ ${idx} -gt 102 ] || [ ${idx} -lt 110 ]); then
     wget -qO ${xray_config_manage} https://raw.githubusercontent.com/zxcvos/Xray-script/main/tool/xray_config_manage.sh
     chmod a+x ${xray_config_manage}
   fi
@@ -630,6 +636,9 @@ function menu() {
     ;;
   0)
     exit 0
+    ;;
+  *)
+    _error "请输入正确的选项值"
     ;;
   esac
 }
