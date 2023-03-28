@@ -172,14 +172,13 @@ function _print_list() {
 }
 
 function select_data() {
-  local data_list=()
-  local index_list=()
+  local data_list=($(awk -v FS=',' '{for (i=1; i<=NF; i++) arr[i]=$i} END{for (i in arr) print arr[i]}' <<<"${1}"))
+  local index_list=($(awk -v FS=',' '{for (i=1; i<=NF; i++) arr[i]=$i} END{for (i in arr) print arr[i]}' <<<"${2}"))
   local result_list=()
-  IFS=',' read -ra data_list <<<"${1}"
-  IFS=',' read -ra index_list <<<"${2}"
   if [ ${#index_list[@]} -ne 0 ]; then
     for i in "${index_list[@]}"; do
-      if _is_digit "${i}" && [ ${i} -ge 0 ] && [ ${i} -lt ${#data_list[@]} ]; then
+      if _is_digit "${i}" && [ ${i} -ge 1 ] && [ ${i} -le ${#data_list[@]} ]; then
+        i=$((i - 1))
         result_list+=("${data_list[${i}]}")
       fi
     done
@@ -416,6 +415,16 @@ function show_share_link() {
   local sl_shortId=""
   local sl_spiderX='spx=%2F'
   local sl_descriptive_text='VLESS-XTLS-uTLS-REALITY'
+  # select show
+  _print_list ${sl_ids[@]}
+  read -p "请选择生成分享链接的 UUID ，用英文逗号分隔， 默认全选: " pick_num
+  sl_id=($(select_data "$(awk 'BEGIN{ORS=","} {print}' <<<"${sl_ids[@]}")" "${pick_num}"))
+  _print_list ${sl_serverNames[@]}
+  read -p "请选择生成分享链接的 serverName ，用英文逗号分隔， 默认全选: " pick_num
+  sl_serverNames=($(select_data "$(awk 'BEGIN{ORS=","} {print}' <<<"${sl_serverNames[@]}")" "${pick_num}"))
+  _print_list ${sl_shortIds[@]}
+  read -p "请选择生成分享链接的 shortId ，用英文逗号分隔， 默认全选: " pick_num
+  sl_shortIds=($(select_data "$(awk 'BEGIN{ORS=","} {print}' <<<"${sl_shortIds[@]}")" "${pick_num}"))
   echo -e "--------------- share link ---------------"
   for sl_id in ${sl_ids[@]}; do
     sl_uuid="${sl_id}"
