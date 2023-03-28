@@ -230,10 +230,11 @@ function is_port() {
 function is_valid_IPv4_address() {
   local ip_regex='^((2(5[0-5]|[0-4][0-9]))|[0-1]?[0-9]{1,2})(\.((2(5[0-5]|[0-4][0-9]))|[0-1]?[0-9]{1,2})){3}$'
   local IPv4="${1}"
+  local fields=()
   if [[ ! "${IPv4}" =~ ${ip_regex} ]]; then
     return 1
   fi
-  IFS='.' read -ra fields <<<"${IPv4}"
+  fields=($(awk -v FS='.' '{for (i = 1; i<=NF; i++) arr[i] = $i} END{for (i in arr) print arr[i]}' <<<"${IPv4}"))
   for field in "${fields[@]}"; do
     if ((field > 255)); then
       return 1
