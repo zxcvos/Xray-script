@@ -183,10 +183,10 @@ function select_data() {
       fi
     done
   else
-    result_list=(${data_list[@]})
+    result_list=("${data_list[@]}")
   fi
   if [ ${#result_list[@]} -eq 0 ]; then
-    result_list=(${data_list[@]})
+    result_list=("${data_list[@]}")
   fi
   echo "${result_list[@]}"
 }
@@ -200,7 +200,7 @@ function select_dest() {
   local prompt="请选择你的 dest, 当前默认使用 \"${cur_dest}\", 自填选 0: "
   until [[ ${is_dest} =~ ^[Yy]$ ]]; do
     echo -e "---------------- dest 列表 -----------------"
-    _print_list ${dest_list[@]}
+    _print_list "${dest_list[@]}"
     read -p "${prompt}" pick
     if [[ "${pick}" == "" && "${cur_dest}" != "" ]]; then
       pick_dest=${cur_dest}
@@ -392,6 +392,8 @@ function show_config() {
   echo -e "${RED}此脚本仅供交流学习使用，请勿使用此脚本行违法之事。${NC}"
   echo -e "${RED}网络非法外之地，行非法之事，必将接受法律制裁。${NC}"
   echo -e "------------------------------------------"
+  read -p "是否生成分享链接[y/n]: " is_show_share_link
+  [[ ${is_show_share_link} =~ ^[Yy]$ ]] && show_share_link
 }
 
 function show_share_link() {
@@ -416,22 +418,22 @@ function show_share_link() {
   local sl_spiderX='spx=%2F'
   local sl_descriptive_text='VLESS-XTLS-uTLS-REALITY'
   # select show
-  _print_list ${sl_ids[@]}
+  _print_list "${sl_ids[@]}"
   read -p "请选择生成分享链接的 UUID ，用英文逗号分隔， 默认全选: " pick_num
   sl_id=($(select_data "$(awk 'BEGIN{ORS=","} {print}' <<<"${sl_ids[@]}")" "${pick_num}"))
-  _print_list ${sl_serverNames[@]}
+  _print_list "${sl_serverNames[@]}"
   read -p "请选择生成分享链接的 serverName ，用英文逗号分隔， 默认全选: " pick_num
   sl_serverNames=($(select_data "$(awk 'BEGIN{ORS=","} {print}' <<<"${sl_serverNames[@]}")" "${pick_num}"))
-  _print_list ${sl_shortIds[@]}
+  _print_list "${sl_shortIds[@]}"
   read -p "请选择生成分享链接的 shortId ，用英文逗号分隔， 默认全选: " pick_num
   sl_shortIds=($(select_data "$(awk 'BEGIN{ORS=","} {print}' <<<"${sl_shortIds[@]}")" "${pick_num}"))
   echo -e "--------------- share link ---------------"
-  for sl_id in ${sl_ids[@]}; do
+  for sl_id in "${sl_ids[@]}"; do
     sl_uuid="${sl_id}"
-    for sl_serverName in ${sl_serverNames[@]}; do
+    for sl_serverName in "${sl_serverNames[@]}"; do
       sl_sni="sni=${sl_serverName}"
       echo -e "---------- serverName ${sl_sni} ----------"
-      for sl_shortId in ${sl_shortIds[@]}; do
+      for sl_shortId in "${sl_shortIds[@]}"; do
         [ "${sl_shortId//\"/}" != "" ] && sl_shortId="sid=${sl_shortId//\"/}" || sl_shortId=""
         sl="${sl_protocol}://${sl_uuid}@${sl_host}:${sl_port}?${sl_security}&${sl_flow}&${sl_fingerprint}&${sl_publicKey}&${sl_sni}&${sl_spiderX}&${sl_shortId}"
         echo "${sl%&}#${sl_descriptive_text}"
@@ -529,8 +531,6 @@ function menu() {
     ;;
   101)
     show_config
-    read -p "是否生成分享链接[y/n]: " is_show_share_link
-    [[ ${is_show_share_link} =~ ^[Yy]$ ]] && show_share_link
     ;;
   102)
     [ -f /usr/local/etc/xray-script/traffic.sh ] || wget -O /usr/local/etc/xray-script/traffic.sh https://raw.githubusercontent.com/zxcvos/Xray-script/main/tool/traffic.sh
