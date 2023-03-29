@@ -229,8 +229,7 @@ function select_dest() {
       _info "过滤通配符后的 SNI"
       _print_list $(echo ${sns} | jq -r '.[]')
       read -p "请选择要使用的 serverName ，用英文逗号分隔， 默认全选: " pick_num
-      sns=($(select_data "$(awk 'BEGIN{ORS=","} {print}' <<<"$(echo ${sns} | jq -r -c '.[]')")" "${pick_num}"))
-      sns=$(echo "${sns[@]}" | jq -R -c 'split(" ")')
+      sns=$(select_data "$(awk 'BEGIN{ORS=","} {print}' <<<"$(echo ${sns} | jq -r -c '.[]')")" "${pick_num}" | jq -R -c 'split(" ")')
       _info "如果有更多的 serverNames 请在 /usr/local/etc/xray-script/config.json 中自行编辑"
     else
       pick_dest="${dest_list[${pick} - 1]}"
