@@ -477,7 +477,7 @@ function menu() {
   echo -e "${GREEN}106.${NC} 修改 shortIds"
   echo -e "${GREEN}107.${NC} 修改 xray 监听端口"
   echo -e "${GREEN}108.${NC} 刷新已有的 shortIds"
-  echo -e "${GREEN}109.${NC} 添加自定义的 shortIds"
+  echo -e "${GREEN}109.${NC} 追加自定义的 shortIds"
   echo -e "----------------- 其他选项 ----------------"
   echo -e "${GREEN}201.${NC} 更新至最新稳定版内核"
   echo -e "${GREEN}202.${NC} 卸载多余内核"
