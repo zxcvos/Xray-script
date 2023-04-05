@@ -10,6 +10,7 @@
   * 实现自动获取的 serverNames 通配符域名与 CDN SNI 域名的过滤，dest 如果是子域名将会自动加入到 serverNames 中
   * 实现自填 dest 的 spiderX 的自定义显示，例如：自填 dest 为 `fmovies.to/home` 时，client config 会显示 `spiderX: /home`
 * 默认配置禁回国流量、广告、bt
+* 可使用 Docker 部署 Cloudflare WARP Proxy
 * 实现 geo 文件的自动更新
 
 ## 如何使用
@@ -50,6 +51,7 @@
 107. 修改 xray 监听端口
 108. 刷新已有的 shortIds
 109. 追加自定义的 shortIds
+110. 使用 WARP 分流，开启 OpenAI
 ----------------- 其他选项 ----------------
 201. 更新至最新稳定版内核
 202. 卸载多余内核
@@ -82,8 +84,14 @@
 
 [chika0801 Xray 配置文件模板][chika0801-Xray-examples]
 
+[部署 Cloudflare WARP Proxy][haoel]
+
+[cloudflare-warp 镜像][e7h4n]
+
+**此脚本仅供交流学习使用，请勿使用此脚本行违法之事。网络非法外之地，行非法之事，必将接受法律制裁。**
+
 [Xray-core]: https://github.com/XTLS/Xray-core (THE NEXT FUTURE)
 [REALITY]: https://github.com/XTLS/REALITY (THE NEXT FUTURE)
 [chika0801-Xray-examples]: https://github.com/chika0801/Xray-examples (chika0801 Xray 配置文件模板)
-
-**此脚本仅供交流学习使用，请勿使用此脚本行违法之事。网络非法外之地，行非法之事，必将接受法律制裁。**
+[haoel]: https://github.com/haoel/haoel.github.io#943-docker-%E4%BB%A3%E7%90%86 (使用 Docker 快速部署 Cloudflare WARP Proxy)
+[e7h4n]: https://github.com/e7h4n/cloudflare-warp (cloudflare-warp 镜像)
