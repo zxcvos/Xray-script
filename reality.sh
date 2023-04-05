@@ -9,6 +9,8 @@
 # Xray-core: https://github.com/XTLS/Xray-core
 # REALITY: https://github.com/XTLS/REALITY
 # Xray-examples: https://github.com/chika0801/Xray-examples
+# Docker cloudflare-warp: https://github.com/e7h4n/cloudflare-warp
+# Cloudflare Warp: https://github.com/haoel/haoel.github.io#943-docker-%E4%BB%A3%E7%90%86
 
 readonly RED='\033[1;31;31m'
 readonly GREEN='\033[1;31;32m'
@@ -478,6 +480,7 @@ function menu() {
   echo -e "${GREEN}107.${NC} 修改 xray 监听端口"
   echo -e "${GREEN}108.${NC} 刷新已有的 shortIds"
   echo -e "${GREEN}109.${NC} 追加自定义的 shortIds"
+  echo -e "${GREEN}110.${NC} 使用 WARP 分流，开启 OpenAI"
   echo -e "----------------- 其他选项 ----------------"
   echo -e "${GREEN}201.${NC} 更新至最新稳定版内核"
   echo -e "${GREEN}202.${NC} 卸载多余内核"
@@ -490,7 +493,7 @@ function menu() {
   if [[ ! -d /usr/local/etc/xray-script && (${idx} -ne 0 && ${idx} -ne 1 && ${idx} -lt 201) ]]; then
     _error "未使用 Xray-script 进行安装"
   fi
-  if [ -d /usr/local/etc/xray-script ] && ([ ${idx} -gt 102 ] || [ ${idx} -lt 110 ]); then
+  if [ -d /usr/local/etc/xray-script ] && ([ ${idx} -gt 102 ] || [ ${idx} -lt 111 ]); then
     wget -qO ${xray_config_manage} https://raw.githubusercontent.com/zxcvos/Xray-script/main/tool/xray_config_manage.sh
     chmod a+x ${xray_config_manage}
   fi
@@ -526,6 +529,17 @@ function menu() {
     purge_xray
     [ -f /usr/local/etc/xray-script/sysctl.conf.bak ] && mv -f /usr/local/etc/xray-script/sysctl.conf.bak /etc/sysctl.conf && _info "已还原网络连接设置"
     rm -rf /usr/local/etc/xray-script
+    if docker ps | grep -q cloudflare-warp; then
+      _info '正在停止 cloudflare-warp'
+      docker container stop cloudflare-warp
+      docker container rm cloudflare-warp
+    fi
+    if docker images | grep -q e7h4n/cloudflare-warp; then
+      _info '正在卸载 cloudflare-warp'
+      docker image rm e7h4n/cloudflare-warp
+    fi
+    rm -rf ${HOME}/.warp
+    _info 'Docker 请自行卸载'
     _info "已经完成卸载"
     ;;
   4)
@@ -612,6 +626,31 @@ function menu() {
     _info "已成功添加自定义 shortIds"
     _systemctl "restart" "xray"
     show_config
+    ;;
+  110)
+    if ! _exists "docker"; then
+      read -r -p "脚本使用 Docker 进行 WARP 管理，是否安装 Docker [y/n] " is_docker
+      if [[ ${is_docker} =~ ^[Yy]$ ]]; then
+        curl -fsSL https://get.docker.com | sh
+      else
+        _warn "取消分流操作"
+        exit 0
+      fi
+    fi
+    if docker ps | grep -q cloudflare-warp; then
+      _info "WARP 已开启，请勿重复设置"
+    else
+      _info "正在获取并启动 cloudflare-warp 镜像"
+      docker run -v $HOME/.warp:/var/lib/cloudflare-warp:rw --restart=always --name=cloudflare-warp e7h4n/cloudflare-warp
+      _info "正在配置 routing"
+      local routing='{"type":"field","domain":["domain:ipinfo.io","domain:ip.sb","geosite:openai"],"outboundTag":"warp"}'
+      _info "正在配置 outbounds"
+      local outbound=$(echo '{"tag":"warp","protocol":"socks","settings":{"servers":[{"address":"172.17.0.2","port":40001}]}}' | jq -c --arg addr "$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' cloudflare-warp)" '.settings.servers[].address = $addr')
+      jq --argjson routing "${routing}" '.routing.rules += [$routing]' /usr/local/etc/xray/config.json >/usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray/config.json
+      jq --argjson outbound "${outbound}" '.outbounds += [$outbound]' /usr/local/etc/xray/config.json >/usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray/config.json
+      _systemctl "restart" "xray"
+      show_config
+    fi
     ;;
   201)
     bash <(wget -qO- https://raw.githubusercontent.com/zxcvos/system-automation-scripts/main/update-kernel.sh)
