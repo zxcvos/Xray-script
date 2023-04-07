@@ -13,6 +13,14 @@
 * 可使用 Docker 部署 Cloudflare WARP Proxy
 * 实现 geo 文件的自动更新
 
+## 问题
+
+虽然使用 warp 开启了 OpenAI 的正常访问，但是还是无法登陆。
+
+已经让肉体在美国的朋友帮忙试了，同一个账号，我这上不去，爆出要联系管理员解决，他那里直接登录成功了，可能是我没刷 IP 的缘故:( 。
+
+需要正常访问且能登陆的建议不要使用我提供的这个开启功能，去用脚本[WARP 一键脚本](https://github.com/fscarmen/warp)然后修改 `/usr/local/etc/xray/config.json`实现 OpenAI 的正常使用。
+
 ## 如何使用
 
 * wget
