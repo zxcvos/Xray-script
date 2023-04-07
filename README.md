@@ -19,7 +19,7 @@
 
 已经让肉体在美国的朋友帮忙试了，同一个账号，我这上不去，爆出要联系管理员解决，他那里直接登录成功了，可能是我没刷 IP 的缘故:( 。
 
-需要正常访问且能登陆的建议不要使用我提供的这个开启功能，去用脚本[WARP 一键脚本](https://github.com/fscarmen/warp)然后修改 `/usr/local/etc/xray/config.json`实现 OpenAI 的正常使用。
+需要正常访问且能登陆的建议不要使用我提供的这个开启功能，去用脚本[WARP 一键脚本][fscarmen]然后修改 `/usr/local/etc/xray/config.json`实现 OpenAI 的正常使用。
 
 ## 如何使用
 
@@ -96,6 +96,8 @@
 
 [cloudflare-warp 镜像][e7h4n]
 
+[WARP 一键脚本][fscarmen]
+
 **此脚本仅供交流学习使用，请勿使用此脚本行违法之事。网络非法外之地，行非法之事，必将接受法律制裁。**
 
 [Xray-core]: https://github.com/XTLS/Xray-core (THE NEXT FUTURE)
@@ -103,3 +105,4 @@
 [chika0801-Xray-examples]: https://github.com/chika0801/Xray-examples (chika0801 Xray 配置文件模板)
 [haoel]: https://github.com/haoel/haoel.github.io#943-docker-%E4%BB%A3%E7%90%86 (使用 Docker 快速部署 Cloudflare WARP Proxy)
 [e7h4n]: https://github.com/e7h4n/cloudflare-warp (cloudflare-warp 镜像)
+[fscarmen]: https://github.com/fscarmen/warp (WARP 一键脚本)
