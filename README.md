@@ -19,7 +19,7 @@
 
 已经让肉体在美国的朋友帮忙试了，同一个账号，我这上不去，爆出要联系管理员解决，他那里直接登录成功了，可能是我没刷 IP 的缘故:( 。
 
-需要正常访问且能登陆的建议不要使用我提供的这个开启功能，去用脚本[WARP 一键脚本][fscarmen]然后修改 `/usr/local/etc/xray/config.json`实现 OpenAI 的正常使用。
+需要正常访问且能登陆的建议不要使用我提供的这个开启功能，去用脚本[WARP 一键脚本][fscarmen]刷出能用的 IP 后，根据[分流到 WARP Client Proxy 的方法][fscarmen-warpproxy]修改 `/usr/local/etc/xray/config.json`实现 OpenAI 的正常使用。
 
 ## 如何使用
 
@@ -106,3 +106,4 @@
 [haoel]: https://github.com/haoel/haoel.github.io#943-docker-%E4%BB%A3%E7%90%86 (使用 Docker 快速部署 Cloudflare WARP Proxy)
 [e7h4n]: https://github.com/e7h4n/cloudflare-warp (cloudflare-warp 镜像)
 [fscarmen]: https://github.com/fscarmen/warp (WARP 一键脚本)
+[fscarmen-warpproxy]: https://github.com/fscarmen/warp/blob/main/README.md#Netflix-%E5%88%86%E6%B5%81%E5%88%B0-WARP-Client-ProxyWireProxy-%E7%9A%84%E6%96%B9%E6%B3%95 (Netflix 分流到 WARP Client Proxy、WireProxy 的方法)
