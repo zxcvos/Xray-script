@@ -321,10 +321,7 @@ function install_update_xray() {
   jq --arg ver "$(xray version | head -n 1 | cut -d \( -f 1 | grep -Eoi '[0-9.]*')" '.xray.version = $ver' /usr/local/etc/xray-script/config.json >/usr/local/etc/xray-script/new.json && mv -f /usr/local/etc/xray-script/new.json /usr/local/etc/xray-script/config.json
   wget -O /usr/local/etc/xray-script/update-dat.sh https://raw.githubusercontent.com/zxcvos/Xray-script/main/tool/update-dat.sh
   chmod a+x /usr/local/etc/xray-script/update-dat.sh
-  crontab -l | {
-    cat
-    echo "30 22 * * * /usr/local/etc/xray-script/update-dat.sh >/dev/null 2>&1"
-  } | uniq | crontab -
+  (crontab -l 2>/dev/null; echo "30 22 * * * /usr/local/etc/xray-script/update-dat.sh >/dev/null 2>&1") | awk '!x[$0]++' | crontab -
   /usr/local/etc/xray-script/update-dat.sh
 }
 
