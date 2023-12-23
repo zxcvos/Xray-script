@@ -12,7 +12,7 @@ ExecStart=/usr/local/bin/xray run -config /usr/local/etc/xray/config.json
 Restart=on-failure
 RestartPreventExitStatus=23
 LimitNPROC=10000
-LimitNOFILE=1000000
+LimitNOFILE=1048576
 
 [Install]
 WantedBy=multi-user.target
