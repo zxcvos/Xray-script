@@ -91,6 +91,7 @@
       "sniffing": null
     },
     {
+      "tag": "xray-script-xtls-reality",
       "listen": "/dev/shm/nginx/raw.sock",
       "protocol": "vless",
       "settings": {
