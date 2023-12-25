@@ -65,17 +65,17 @@
       },
       {
         "type": "field",
-        "ip": [
-          "geoip:cn"
+        "domain": [
+          "geosite:category-ads-all"
         ],
         "outboundTag": "block"
       },
       {
         "type": "field",
-        "domain": [
-          "geosite:category-ads-all"
+        "ip": [
+          "geoip:cn"
         ],
-        "outboundTag": "block"
+        "outboundTag": "cloudflare-warp"
       }
     ]
   },
@@ -91,8 +91,7 @@
       "sniffing": null
     },
     {
-      "listen": "0.0.0.0",
-      "port": 443,
+      "listen": "/dev/shm/nginx/raw.sock",
       "protocol": "vless",
       "settings": {
         "clients": [
@@ -110,19 +109,19 @@
         "security": "reality",
         "realitySettings": {
           "show": false,
-          "dest": "myself_dest",
-          "xver": 2,
+          "dest": "/dev/shm/nginx/cloudreve.sock",
+          "xver": 0,
           "serverNames": [
-            "myself_domain",
-            "myself_www_domain"
+            "drive.example.com",
+            "pan.example.com"
           ],
           "privateKey": "xray x25519 Private key",
           "shortIds": [
             "",
-            "22",
-            "4444",
-            "88888888",
-            "1616161616161616"
+            "2",
+            "4",
+            "8",
+            "16"
           ]
         }
       },
@@ -144,6 +143,18 @@
     {
       "tag": "block",
       "protocol": "blackhole"
+    },
+    {
+      "tag": "cloudflare-warp",
+      "protocol": "socks",
+      "settings": {
+        "servers": [
+          {
+            "address": "172.17.0.2",
+            "port": 40001
+          }
+        ]
+      }
     }
   ]
 }
