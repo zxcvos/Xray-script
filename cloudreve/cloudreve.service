@@ -1,0 +1,23 @@
+[Unit]
+Description=Cloudreve
+Documentation=https://docs.cloudreve.org
+After=network.target
+After=mysqld.service
+Wants=network.target
+
+[Service]
+WorkingDirectory=/usr/local/cloudreve
+ExecStartPre=/bin/rm -rf /dev/shm/cloudreve
+ExecStartPre=/bin/mkdir /dev/shm/cloudreve
+ExecStartPre=/bin/chmod 0666 /dev/shm/cloudreve
+ExecStart=/usr/local/cloudreve/cloudreve
+ExecStopPost=/bin/rm -rf /dev/shm/cloudreve
+Restart=on-abnormal
+RestartSec=5s
+KillMode=mixed
+
+StandardOutput=null
+StandardError=syslog
+
+[Install]
+WantedBy=multi-user.target
