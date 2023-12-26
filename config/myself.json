@@ -1,0 +1,36 @@
+{
+  "xray": {
+    "version": "1.8.6",
+    "tag": "xray-script-xtls-reality",
+    "email": "vless@xtls.reality",
+    "listen": "/dev/shm/nginx/raw.sock",
+    "dest": "/dev/shm/nginx/cloudreve.sock",
+    "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "serverNames": [
+      "drive.example.com",
+      "pan.example.com"
+    ],
+    "privateKey": "xray x25519 Private key",
+    "publicKey": "xray x25519 Public key",
+    "shortIds": [
+      "",
+      "01",
+      "0123",
+      "01234567",
+      "0123456789abcdef"
+    ]
+  },
+  "nginx": {
+    "version": "1.25.3",
+    "openssl": "3.2.0",
+    "brotli": 1,
+    "http": 80,
+    "https": 443,
+    "domain": "example.com"
+  },
+  "cloudreve": {
+    "version": "3.8.3",
+    "username": "admin@cloudreve.org",
+    "password": "12345678"
+  }
+}
