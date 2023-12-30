@@ -640,7 +640,12 @@ function menu() {
     if ! _exists "docker"; then
       read -r -p "脚本使用 Docker 进行 WARP 管理，是否安装 Docker [y/n] " is_docker
       if [[ ${is_docker} =~ ^[Yy]$ ]]; then
-        curl -fsSL https://get.docker.com | sh
+        curl -fsSL -o /usr/local/etc/xray-script/install-docker.sh https://get.docker.com
+        if [[ "$(_os)" == "centos" && "$(_os_ver)" -eq 8 ]]; then
+          sed -i 's|$sh_c "$pkg_manager install -y -q $pkgs"| $sh_c "$pkg_manager install -y -q $pkgs --allowerasing"|' /usr/local/etc/xray-script/install-docker.sh
+        fi
+        sh /usr/local/etc/xray-script/install-docker.sh --dry-run
+        sh /usr/local/etc/xray-script/install-docker.sh
       else
         _warn "取消分流操作"
         exit 0
