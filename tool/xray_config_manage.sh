@@ -41,6 +41,9 @@
 # Version: 0.1
 # Date: 2023-03-21
 
+PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin:/snap/bin
+export PATH
+
 readonly op_regex='^(^--(help|path|download|reset|tag|listen|port|protocol|email|uuid|network|dest|(append-)?server-names|x25519|((reset|append)-)?shortIds)$)|(^-(prcl|a?sn|(r|a)?sid|[htpeundxl])$)$'
 readonly proto_list=('vless')
 readonly network_list=('tcp' 'h2' 'grpc')
