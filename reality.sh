@@ -12,6 +12,9 @@
 # Docker cloudflare-warp: https://github.com/e7h4n/cloudflare-warp
 # Cloudflare Warp: https://github.com/haoel/haoel.github.io#943-docker-%E4%BB%A3%E7%90%86
 
+PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin:/snap/bin
+export PATH
+
 # color
 readonly RED='\033[1;31;31m'
 readonly GREEN='\033[1;31;32m'
