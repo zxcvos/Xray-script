@@ -20,6 +20,7 @@
 #   -d, --dest                    Set dest
 #   -sn, --server-names           Set server names, e.g. xxx.com,www.xxx.com
 #   -asn, --append-server-names   Append server names, e.g. xxx.com,www.xxx.com
+#   --not-validate                Do not validate serverNames
 #   -x, --x25519                  Set x25519
 #   -sid, --shortIds              Set shortIds, e.g. -sid ; -sid 402a ; -sid fd,81d5,,2d5ac952d7a7
 #   -rsid, --reset-shortIds       Reset shortIds
@@ -44,7 +45,7 @@
 PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin:/snap/bin
 export PATH
 
-readonly op_regex='^(^--(help|path|download|reset|tag|listen|port|protocol|email|uuid|network|dest|(append-)?server-names|x25519|((reset|append)-)?shortIds)$)|(^-(prcl|a?sn|(r|a)?sid|[htpeundxl])$)$'
+readonly op_regex='^(^--(help|path|download|reset|tag|listen|port|protocol|email|uuid|network|dest|(append-)?server-names|not-validate|x25519|((reset|append)-)?shortIds)$)|(^-(prcl|a?sn|(r|a)?sid|[htpeundxl])$)$'
 readonly proto_list=('vless')
 readonly network_list=('tcp' 'h2' 'grpc')
 
@@ -65,6 +66,7 @@ declare pickNetwork=0
 declare setDest=''
 declare setServerNames=''
 declare appendServerNames=''
+declare isNotValidate=0
 declare x25519PrivateKey=''
 declare isResetShortIds=0
 declare isSetShortIds=0
@@ -158,6 +160,10 @@ while [[ $# -ge 1 ]]; do
     (printf "%s" "${1}" | grep -Eq "${op_regex}" || [ -z "$1" ]) && echo 'Error: server names not provided' && exit 1
     appendServerNames="$1"
     shift
+    ;;
+  --not-validate)
+    shift
+    isNotValidate=1
     ;;
   -x | --x25519)
     shift
@@ -393,7 +399,11 @@ function set_server_names() {
   local is_append="${3}"
   local sns_list=''
   for domain in $(printf '%s' "${sns_str}" | jq -R -s -c -r 'split(",") | map(select(length > 0)) | .[]'); do
-    xray tls ping ${domain} >/dev/null 2>&1 && sns_list+="${domain},"
+    if [[ ${isNotValidate} -eq 1 ]]; then
+      sns_list+="${domain},"
+    else
+      xray tls ping ${domain} >/dev/null 2>&1 && sns_list+="${domain},"
+    fi
   done
   sns_list=$(printf '%s' "${sns_list}" | jq -R -s -c 'split(",") | map(select(length > 0))')
   if [ ${sns_list} != '[]' ]; then
