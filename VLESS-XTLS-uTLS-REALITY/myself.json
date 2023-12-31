@@ -113,8 +113,7 @@
           "dest": "/dev/shm/nginx/cloudreve.sock",
           "xver": 0,
           "serverNames": [
-            "drive.example.com",
-            "pan.example.com"
+            "example.com"
           ],
           "privateKey": "xray x25519 Private key",
           "shortIds": [
