@@ -573,7 +573,7 @@ function menu() {
   103)
     read_uuid
     _info "正在修改用户 id"
-    "${xray_config_manage}" -u "${in_uuid}"
+    "${xray_config_manage}" -u ${in_uuid}
     _info "已成功修改用户 id"
     _systemctl "restart" "xray"
     show_config
