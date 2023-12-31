@@ -4,11 +4,11 @@
     "tag": "xray-script-xtls-reality",
     "email": "vless@xtls.reality",
     "listen": "/dev/shm/nginx/raw.sock",
+    "port": 443,
     "dest": "/dev/shm/nginx/cloudreve.sock",
     "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
     "serverNames": [
-      "drive.example.com",
-      "pan.example.com"
+      "example.com"
     ],
     "privateKey": "xray x25519 Private key",
     "publicKey": "xray x25519 Public key",
@@ -25,8 +25,11 @@
     "openssl": "3.2.0",
     "brotli": 1,
     "http": 80,
-    "https": 443,
-    "domain": "example.com"
+    "https": 443
+  },
+  "domain": {
+    "type": 1,
+    "name": "example.com"
   },
   "cloudreve": {
     "version": "3.8.3",
