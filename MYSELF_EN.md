@@ -1,3 +1,4 @@
+<!-- Translated by ChatGPT -->
 # Xray-REALITY Management Script
 
 * A purely Shell-scripted REALITY management script
