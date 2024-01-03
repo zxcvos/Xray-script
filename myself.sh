@@ -1445,6 +1445,18 @@ function view_config() {
   echo -e "------------------------------------------"
 }
 
+# 102.change xray uuid
+function change_xray_uuid() {
+  read_uuid
+  # Xray-core config.json
+  ${XRAY_CONFIG_MANAGE} -u ${in_uuid}
+  # Xray-script config.json
+  local uuid="$(jq -r '.inbounds[] | select(.tag == "xray-script-xtls-reality") | .settings.clients[] | select(.email == "vless@xtls.reality") | .id' /usr/local/etc/xray/config.json)"
+  jq --arg id "${uuid}" '.xray.id = $id' "${XRAY_SCRIPT_PATH}/config.json" >"${XRAY_SCRIPT_PATH}/tmp.json" && mv -f "${XRAY_SCRIPT_PATH}/tmp.json" "${XRAY_SCRIPT_PATH}/config.json"
+  _systemctl restart xray
+  view_config
+}
+
 # 201.update kernel
 function update_kernel() {
   bash <(wget -qO- https://raw.githubusercontent.com/zxcvos/system-automation-scripts/main/update-kernel.sh)
@@ -1535,6 +1547,8 @@ function main() {
   echo -e "en: ----------------- Configuration Management ----------------"
   echo -e "zh: ${GREEN}101.${NC} 查看配置"
   echo -e "en: ${GREEN}101.${NC} View Configuration"
+  echo -e "zh: ${GREEN}102.${NC} 修改 id"
+  echo -e "en: ${GREEN}102.${NC} Change xray uuid"
   echo -e "zh: ----------------- 其他选项 ----------------"
   echo -e "en: ----------------- Other Options ----------------"
   echo -e "zh: ${GREEN}201.${NC} 更新至最新稳定版内核"
@@ -1566,6 +1580,7 @@ function main() {
   5) stop ;;
   6) restart ;;
   101) view_config ;;
+  102) change_xray_uuid ;;
   201) update_kernel ;;
   202) remove_kernel ;;
   203) change_ssh_port ;;
