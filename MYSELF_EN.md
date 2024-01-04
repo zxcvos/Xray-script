@@ -116,6 +116,7 @@ bash ${HOME}/Xray-script.sh
 6. Restart
 ----------------- Configuration Management ----------------
 101. View Configuration
+102. Change xray uuid
 ----------------- Other Options ----------------
 201. Update to Latest Stable Kernel
 202. Remove Extra Kernels
