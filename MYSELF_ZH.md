@@ -23,12 +23,12 @@
 
 ## 已测试系统
 
-| Platform | Version  |
-| -------- | -------- |
-| Debian   | 10,11,12 |
-| Ubuntu   | 20,22,23 |
-| CentOS   | 7,8,9    |
-| Rocky    | 8,9      |
+| Platform | Version    |
+| -------- | ---------- |
+| Debian   | 10, 11, 12 |
+| Ubuntu   | 20, 22, 23 |
+| CentOS   | 7, 8, 9    |
+| Rocky    | 8, 9       |
 
 以上发行版均通过 Vultr 测试安装。
 
