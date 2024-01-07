@@ -24,12 +24,12 @@
 
 ## Tested Systems
 
-| Platform | Version  |
-| -------- | -------- |
+| Platform | Version    |
+| -------- | ---------- |
 | Debian   | 10, 11, 12 |
 | Ubuntu   | 20, 22, 23 |
 | CentOS   | 7, 8, 9    |
-| Rocky    | 8, 9      |
+| Rocky    | 8, 9       |
 
 The above distributions have been tested for installation on Vultr.
 
@@ -53,17 +53,17 @@ Update system management packages -> Install dependencies -> Install Docker -> I
 
 **This is the average installation time for a single-core 1G server and is for reference only:**
 
-| Task                   | Duration    |
-| ---------------------- | ----------- |
-| Update system packages | 0-10 minutes |
-| Install dependencies   | 0-5 minutes  |
-| Install Docker         | 1-2 minutes  |
-| Install Cloudreve      | 3-5 minutes  |
-| Install Cloudflare-warp| 3-5 minutes  |
-| Install Xray           | < half a minute |
-| Install Nginx          | 13-15 minutes |
-| Issue certificates | 1-2 minutes  |
-| Configuration files    | < 100 milliseconds |
+| Task                    | Duration           |
+| ----------------------- | ------------------ |
+| Update system packages  | 0-10 minutes       |
+| Install dependencies    | 0-5 minutes        |
+| Install Docker          | 1-2 minutes        |
+| Install Cloudreve       | 3-5 minutes        |
+| Install Cloudflare-warp | 3-5 minutes        |
+| Install Xray            | < half a minute    |
+| Install Nginx           | 13-15 minutes      |
+| Issue certificates      | 1-2 minutes        |
+| Configuration files     | < 100 milliseconds |
 
 ### Why does the script installation take so long?
 
@@ -143,49 +143,49 @@ bash ${HOME}/Xray-script.sh
 ## Dependency List
 
 The script may automatically install the following dependencies:
-| Purpose                       | Debian-based Systems                | Red Hat-based Systems   |
-| ----------------------------- | ----------------------------------- | ----------------------- |
-| yumdb set (mark packages for manual installation) |                                   | yum-utils               |
-| dnf config-manager            |                                   | dnf-plugins-core        |
-| IP retrieval                  | iproute2                          | iproute                 |
-| DNS resolution                | dnsutils                          | bind-utils              |
-| wget                          | wget                              | wget                    |
-| curl                          | curl                              | curl                    |
-| wget/curl https               | ca-certificates                   | ca-certificates         |
-| kill/pkill/ps/sysctl/free     | procps                            | procps-ng               |
-| epel repository               |                                   | epel-release            |
-| epel repository               |                                   | epel-next-release       |
-| remi repository               |                                   | remi-release            |
-| Firewall                      | ufw                               | firewalld               |
-| **Compilation Basics:**       |                                   |                         |
-| Download source files         | wget                              | wget                    |
-| Unzip tar source files        | tar                               | tar                     |
-| Unzip tar.gz source files     | gzip                              | gzip                    |
-| gcc                            | gcc                               | gcc                     |
-| g++                            | g++                               | gcc-c++                 |
-| make                           | make                              | make                    |
-| **acme.sh Dependencies:**     |                                   |                         |
-|                               | curl                              | curl                    |
-|                               | openssl                           | openssl                 |
-|                               | cron                              | crontabs                |
-| **Compile openssl:**          |                                   |                         |
-|                               | perl-base (included in libperl-dev)| perl-IPC-Cmd            |
-|                               | perl-modules-5.32 (included in libperl-dev)| perl-Getopt-Long    |
-|                               | libperl5.32 (included in libperl-dev)| perl-Data-Dumper        |
-|                               |                                   | perl-FindBin            |
-| **Compile Brotli:**           |                                   |                         |
-|                               | git                               | git                     |
-|                               | libbrotli-dev                     | brotli-devel            |
-| **Compile Nginx:**            |                                   |                         |
-|                               | libpcre2-dev                      | pcre2-devel             |
-|                               | zlib1g-dev                        | zlib-devel              |
-| --with-http_xslt_module       | libxml2-dev                       | libxml2-devel           |
-| --with-http_xslt_module       | libxslt1-dev                      | libxslt-devel           |
-| --with-http_image_filter_module| libgd-dev                         | gd-devel                |
-| --with-google_perftools_module | libgoogle-perftools-dev           | gperftools-devel        |
-| --with-http_geoip_module       | libgeoip-dev                      | geoip-devel             |
-| --with-http_perl_module        |                                   | perl-ExtUtils-Embed     |
-|                               | libperl-dev                       | perl-devel              |
+| Purpose                                           | Debian-based Systems                        | Red Hat-based Systems |
+| ------------------------------------------------- | ------------------------------------------- | --------------------- |
+| yumdb set (mark packages for manual installation) |                                             | yum-utils             |
+| dnf config-manager                                |                                             | dnf-plugins-core      |
+| IP retrieval                                      | iproute2                                    | iproute               |
+| DNS resolution                                    | dnsutils                                    | bind-utils            |
+| wget                                              | wget                                        | wget                  |
+| curl                                              | curl                                        | curl                  |
+| wget/curl https                                   | ca-certificates                             | ca-certificates       |
+| kill/pkill/ps/sysctl/free                         | procps                                      | procps-ng             |
+| epel repository                                   |                                             | epel-release          |
+| epel repository                                   |                                             | epel-next-release     |
+| remi repository                                   |                                             | remi-release          |
+| Firewall                                          | ufw                                         | firewalld             |
+| **Compilation Basics:**                           |                                             |                       |
+| Download source files                             | wget                                        | wget                  |
+| Unzip tar source files                            | tar                                         | tar                   |
+| Unzip tar.gz source files                         | gzip                                        | gzip                  |
+| gcc                                               | gcc                                         | gcc                   |
+| g++                                               | g++                                         | gcc-c++               |
+| make                                              | make                                        | make                  |
+| **acme.sh Dependencies:**                         |                                             |                       |
+|                                                   | curl                                        | curl                  |
+|                                                   | openssl                                     | openssl               |
+|                                                   | cron                                        | crontabs              |
+| **Compile openssl:**                              |                                             |                       |
+|                                                   | perl-base (included in libperl-dev)         | perl-IPC-Cmd          |
+|                                                   | perl-modules-5.32 (included in libperl-dev) | perl-Getopt-Long      |
+|                                                   | libperl5.32 (included in libperl-dev)       | perl-Data-Dumper      |
+|                                                   |                                             | perl-FindBin          |
+| **Compile Brotli:**                               |                                             |                       |
+|                                                   | git                                         | git                   |
+|                                                   | libbrotli-dev                               | brotli-devel          |
+| **Compile Nginx:**                                |                                             |                       |
+|                                                   | libpcre2-dev                                | pcre2-devel           |
+|                                                   | zlib1g-dev                                  | zlib-devel            |
+| --with-http_xslt_module                           | libxml2-dev                                 | libxml2-devel         |
+| --with-http_xslt_module                           | libxslt1-dev                                | libxslt-devel         |
+| --with-http_image_filter_module                   | libgd-dev                                   | gd-devel              |
+| --with-google_perftools_module                    | libgoogle-perftools-dev                     | gperftools-devel      |
+| --with-http_geoip_module                          | libgeoip-dev                                | geoip-devel           |
+| --with-http_perl_module                           |                                             | perl-ExtUtils-Embed   |
+|                                                   | libperl-dev                                 | perl-devel            |
 
 ## Credits
 
@@ -219,7 +219,6 @@ The script may automatically install the following dependencies:
 [haoel]: https://github.com/haoel/haoel.github.io#943-docker-%E4%BB%A3%E7%90%86 (使用 Docker 快速部署 Cloudflare WARP Proxy)
 [e7h4n]: https://github.com/e7h4n/cloudflare-warp (cloudflare-warp 镜像)
 [fscarmen]: https://github.com/fscarmen/warp (WARP 一键脚本)
-[fscarmen-warpproxy]: https://github.com/fscarmen/warp/blob/main/README.md#Netflix-%E5%88%86%E6%B5%81%E5%88%B0-WARP-Client-ProxyWireProxy-%E7%9A%84%E6%96%B9%E6%B3%95 (Netflix 分流到 WARP Client Proxy、WireProxy 的方法)
 [v2ray-rules-dat]: https://github.com/Loyalsoldier/v2ray-rules-dat (V2Ray 路由规则文件加强版)
 [kirin10000/Xray-script]: https://github.com/kirin10000/Xray-script (kirin10000/Xray-script)
 [nginx-sni-dispatcher]: https://blog.xmgspace.me/archives/nginx-sni-dispatcher.html (使用Nginx进行SNI分流并完美和网站共存)
