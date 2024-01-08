@@ -1474,6 +1474,17 @@ function change_xray_x25519() {
   view_config
 }
 
+# 104.change xray shortIds
+function change_xray_shortIds() {
+  # Xray-core config.json
+  ${XRAY_CONFIG_MANAGE} -rsid
+  # Xray-script config.json
+  local shortIds="$(jq -c '.inbounds[] | select(.tag == "xray-script-xtls-reality") | .streamSettings.realitySettings.shortIds' /usr/local/etc/xray/config.json)"
+  jq --argjson shortIds "${shortIds}" '.xray.shortIds = $shortIds' "${XRAY_SCRIPT_PATH}/config.json" >"${XRAY_SCRIPT_PATH}/tmp.json" && mv -f "${XRAY_SCRIPT_PATH}/tmp.json" "${XRAY_SCRIPT_PATH}/config.json"
+  _systemctl restart xray
+  view_config
+}
+
 # 201.update kernel
 function update_kernel() {
   bash <(wget -qO- https://raw.githubusercontent.com/zxcvos/system-automation-scripts/main/update-kernel.sh)
@@ -1568,6 +1579,8 @@ function main() {
   echo -e "en: ${GREEN}102.${NC} Change xray uuid"
   echo -e "zh: ${GREEN}103.${NC} 修改 x25519"
   echo -e "en: ${GREEN}103.${NC} Change xray x25519"
+  echo -e "zh: ${GREEN}104.${NC} 修改 shortIds"
+  echo -e "en: ${GREEN}104.${NC} Change xray shortIds"
   echo -e "zh: ----------------- 其他选项 ----------------"
   echo -e "en: ----------------- Other Options ----------------"
   echo -e "zh: ${GREEN}201.${NC} 更新至最新稳定版内核"
@@ -1601,6 +1614,7 @@ function main() {
   101) view_config ;;
   102) change_xray_uuid ;;
   103) change_xray_x25519 ;;
+  104) change_xray_shortIds ;;
   201) update_kernel ;;
   202) remove_kernel ;;
   203) change_ssh_port ;;
