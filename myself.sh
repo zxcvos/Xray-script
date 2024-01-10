@@ -1485,6 +1485,33 @@ function change_xray_shortIds() {
   view_config
 }
 
+# 105.reset cloudreve admin
+function reset_cloudreve_admin() {
+  _info "zh: 重置 cloudreve 的初始账号，初始密码。"
+  _info "en: Resetting the initial username and password for cloudreve."
+  _warn "zh: 停止 Cloudreve。"
+  _warn "en: Stopping Cloudreve."
+  cd "${CLOUDREVE_PATH}"
+  docker_compose_manage stop
+  _info "zh: 删除 Cloudreve 的数据库。"
+  _info "en: Deleting the database of Cloudreve."
+  rm -rf "${CLOUDREVE_PATH}/cloudreve/cloudreve.db"
+  touch ${CLOUDREVE_PATH}/cloudreve/cloudreve.db
+  docker_compose_manage start
+  _info "zh: 等待 cloudreve 启动。"
+  _info "en: Waiting for cloudreve to start."
+  sleep 5
+  _info "zh: 获取 cloudreve 版本号，初始账号，初始密码。"
+  _info "en: Getting the version, initial username, and initial password of cloudreve."
+  local cloudreve_version="$(docker logs cloudreve | grep -Eoi "v[0-9]+.[0-9]+.[0-9]+" | cut -c2-)"
+  local cloudreve_username="$(docker logs cloudreve | grep Admin | awk '{print $NF}' | head -1)"
+  local cloudreve_password="$(docker logs cloudreve | grep Admin | awk '{print $NF}' | tail -1)"
+  jq --arg version "${cloudreve_version}" '.cloudreve.version = $version' "${XRAY_SCRIPT_PATH}/config.json" >"${XRAY_SCRIPT_PATH}/tmp.json" && mv -f "${XRAY_SCRIPT_PATH}/tmp.json" "${XRAY_SCRIPT_PATH}/config.json"
+  jq --arg username "${cloudreve_username}" '.cloudreve.username = $username' "${XRAY_SCRIPT_PATH}/config.json" >"${XRAY_SCRIPT_PATH}/tmp.json" && mv -f "${XRAY_SCRIPT_PATH}/tmp.json" "${XRAY_SCRIPT_PATH}/config.json"
+  jq --arg password "${cloudreve_password}" '.cloudreve.password = $password' "${XRAY_SCRIPT_PATH}/config.json" >"${XRAY_SCRIPT_PATH}/tmp.json" && mv -f "${XRAY_SCRIPT_PATH}/tmp.json" "${XRAY_SCRIPT_PATH}/config.json"
+  view_config
+}
+
 # 201.update kernel
 function update_kernel() {
   bash <(wget -qO- https://raw.githubusercontent.com/zxcvos/system-automation-scripts/main/update-kernel.sh)
@@ -1581,6 +1608,8 @@ function main() {
   echo -e "en: ${GREEN}103.${NC} Change xray x25519"
   echo -e "zh: ${GREEN}104.${NC} 修改 shortIds"
   echo -e "en: ${GREEN}104.${NC} Change xray shortIds"
+  echo -e "zh: ${GREEN}105.${NC} 重置 Cloudreve 初始账号密码"
+  echo -e "en: ${GREEN}105.${NC} Reset cloudreve admin"
   echo -e "zh: ----------------- 其他选项 ----------------"
   echo -e "en: ----------------- Other Options ----------------"
   echo -e "zh: ${GREEN}201.${NC} 更新至最新稳定版内核"
@@ -1615,6 +1644,7 @@ function main() {
   102) change_xray_uuid ;;
   103) change_xray_x25519 ;;
   104) change_xray_shortIds ;;
+  105) reset_cloudreve_admin ;;
   201) update_kernel ;;
   202) remove_kernel ;;
   203) change_ssh_port ;;
