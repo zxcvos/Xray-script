@@ -118,6 +118,8 @@ bash ${HOME}/Xray-script.sh
 101. View Configuration
 102. Change xray uuid
 103. Change xray x25519
+104. Change xray shortIds
+105. Reset cloudreve admin
 ----------------- Other Options ----------------
 201. Update to Latest Stable Kernel
 202. Remove Extra Kernels
