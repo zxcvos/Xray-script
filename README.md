@@ -70,19 +70,19 @@
 
 ## 客户端配置
 
-| 名称 | 值 |
-| :--- | :--- |
-| 地址 | IP 或服务端的域名 |
-| 端口 | 443 |
-| 用户ID | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx |
-| 流控 | xtls-rprx-vision |
-| 传输协议 | tcp |
-| 传输层安全 | reality |
-| SNI | learn.microsoft.com |
-| Fingerprint | chrome |
-| PublicKey | wC-8O2vI-7OmVq4TVNBA57V_g4tMDM7jRXkcBYGMYFw |
-| shortId | 6ba85179e30d4fc2 |
-| spiderX | / |
+| 名称        | 值                                          |
+| :---------- | :------------------------------------------ |
+| 地址        | IP 或服务端的域名                           |
+| 端口        | 443                                         |
+| 用户ID      | xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx        |
+| 流控        | xtls-rprx-vision                            |
+| 传输协议    | tcp                                         |
+| 传输层安全  | reality                                     |
+| SNI         | learn.microsoft.com                         |
+| Fingerprint | chrome                                      |
+| PublicKey   | wC-8O2vI-7OmVq4TVNBA57V_g4tMDM7jRXkcBYGMYFw |
+| shortId     | 6ba85179e30d4fc2                            |
+| spiderX     | /                                           |
 
 ## 致谢
 
