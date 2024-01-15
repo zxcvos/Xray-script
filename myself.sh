@@ -1485,7 +1485,13 @@ function change_xray_shortIds() {
   view_config
 }
 
-# 105.reset cloudreve admin
+# 105.change domain
+function change_domain() {
+  echo "zh: TODO: 未完成"
+  echo "en: TODO: undone"
+}
+
+# 106.reset cloudreve admin
 function reset_cloudreve_admin() {
   _info "zh: 重置 cloudreve 的初始账号，初始密码。"
   _info "en: Resetting the initial username and password for cloudreve."
@@ -1608,8 +1614,10 @@ function main() {
   echo -e "en: ${GREEN}103.${NC} Change xray x25519"
   echo -e "zh: ${GREEN}104.${NC} 修改 shortIds"
   echo -e "en: ${GREEN}104.${NC} Change xray shortIds"
-  echo -e "zh: ${GREEN}105.${NC} 重置 Cloudreve 初始账号密码"
-  echo -e "en: ${GREEN}105.${NC} Reset cloudreve admin"
+  echo -e "zh: ${YELLOW}105.${NC} 修改域名(未完成)"
+  echo -e "en: ${YELLOW}105.${NC} Change domain(undone)"
+  echo -e "zh: ${GREEN}106.${NC} 重置 Cloudreve 初始账号密码"
+  echo -e "en: ${GREEN}106.${NC} Reset cloudreve admin"
   echo -e "zh: ----------------- 其他选项 ----------------"
   echo -e "en: ----------------- Other Options ----------------"
   echo -e "zh: ${GREEN}201.${NC} 更新至最新稳定版内核"
@@ -1644,7 +1652,8 @@ function main() {
   102) change_xray_uuid ;;
   103) change_xray_x25519 ;;
   104) change_xray_shortIds ;;
-  105) reset_cloudreve_admin ;;
+  105) change_domain ;;
+  106) reset_cloudreve_admin ;;
   201) update_kernel ;;
   202) remove_kernel ;;
   203) change_ssh_port ;;
