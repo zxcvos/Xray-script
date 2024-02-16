@@ -45,6 +45,7 @@ readonly NC='\033[0m'
 
 # directory
 readonly CUR_DIR="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
+readonly CUR_FILE="$(basename $0)"
 readonly TMPFILE_DIR="$(mktemp -d -p "${CUR_DIR}" -t nginxtemp.XXXXXXXX)" || exit 1
 
 # global constant
@@ -97,7 +98,7 @@ function language() {
   esac
 }
 
-language && sed -e '$a main' -e "s/.*${hide_lang}:.*//g; s/${show_lang}: //" -e '/^function language() {/,/^language/d' "${CUR_DIR}/$0" >"${CUR_DIR}/tmp.sh" && bash "${CUR_DIR}/tmp.sh" || exit 1
+language && sed -e '$a main' -e "s/.*${hide_lang}:.*//g; s/${show_lang}: //" -e '/^function language() {/,/^language/d' "${CUR_DIR}/${CUR_FILE}" >"${CUR_DIR}/tmp.sh" && bash "${CUR_DIR}/tmp.sh" || exit 1
 
 # status print
 function _info() {
