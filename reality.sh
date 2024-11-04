@@ -380,6 +380,15 @@ function config_xray() {
   _systemctl "restart" "xray"
 }
 
+function tcp2raw() {
+  local current_xray_version=$(xray version | awk '$1=="Xray" {print $2}')
+  local tcp2raw_xray_version='24.9.30'
+  if _version_ge "${current_xray_version}" "${tcp2raw_xray_version}"; then
+    sed -i 's/"network": "tcp"/"network": "raw"/' /usr/local/etc/xray/config.json
+    _systemctl "restart" "xray"
+  fi
+}
+
 function show_config() {
   local IPv4=$(wget -qO- -t1 -T2 ipv4.icanhazip.com)
   local xs_inbound=$(jq '.inbounds[] | select(.tag == "xray-script-xtls-reality")' /usr/local/etc/xray/config.json)
@@ -523,6 +532,7 @@ function menu() {
       read_uuid
       select_dest
       config_xray
+      tcp2raw
       show_config
     fi
     ;;
@@ -533,6 +543,7 @@ function menu() {
     if _version_ge "${latest_xray_version}" "${current_xray_version}"; then
       _info "检测到有新版可用"
       install_update_xray
+      tcp2raw
     else
       _info "当前已是最新版本: ${current_xray_version}"
     fi
