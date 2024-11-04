@@ -1129,6 +1129,15 @@ function config_xray() {
   jq --argjson shortIds "${shortIds}" '.xray.shortIds = $shortIds' "${XRAY_SCRIPT_PATH}/config.json" >"${XRAY_SCRIPT_PATH}/tmp.json" && mv -f "${XRAY_SCRIPT_PATH}/tmp.json" "${XRAY_SCRIPT_PATH}/config.json"
 }
 
+function tcp2raw() {
+  local current_xray_version=$(xray version | awk '$1=="Xray" {print $2}')
+  local tcp2raw_xray_version='24.9.30'
+  if _version_ge "${current_xray_version}" "${tcp2raw_xray_version}"; then
+    sed -i 's/"network": "tcp"/"network": "raw"/' /usr/local/etc/xray/config.json
+    _systemctl restart xray
+  fi
+}
+
 # install
 function install_xray_config_manage() {
   _info "zh: 下载 xray_config_manage.sh。"
@@ -1306,11 +1315,12 @@ function install() {
   # Run service
   stop
   start
+  tcp2raw
   # View config
   view_config
 }
 
-# 1.update
+# 2.update
 function update() {
   # Get variable
   enable_brotli
@@ -1320,6 +1330,7 @@ function update() {
   update_acme_sh
   # Xray
   install_update_xray
+  tcp2raw
   # Nginx
   if source_update; then
     if [[ ! "${is_enable_brotli}" =~ ^[Yy]$ ]]; then
