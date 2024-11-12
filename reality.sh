@@ -98,7 +98,11 @@ function _is_digit() {
 }
 
 function _version_ge() {
-  test "$(echo "$@" | tr ' ' '\n' | sort -rV | head -n 1)" == "$1"
+  if [ "$1" == "$2" ]; then
+    false
+  else
+    test "$(echo "$@" | tr ' ' '\n' | sort -rV | head -n 1)" == "$1"
+  fi
 }
 
 function _is_tlsv1_3_h2() {
