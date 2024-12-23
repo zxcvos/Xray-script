@@ -601,11 +601,18 @@ function menu() {
     show_config
     ;;
   104)
-    _info "正在修改 dest 与 serverNames"
+    _info "正在修改 dest(target) 与 serverNames"
     select_dest
-    "${xray_config_manage}" -d "$(jq -r '.xray.dest' /usr/local/etc/xray-script/config.json | grep -Eoi '([a-zA-Z0-9](\-?[a-zA-Z0-9])*\.)+[a-zA-Z]{2,}')"
-    "${xray_config_manage}" -sn "$(jq -c -r '.xray | .serverNames[.dest] | .[]' /usr/local/etc/xray-script/config.json | tr '\n' ',')"
-    _info "已成功修改 dest 与 serverNames"
+    local current_xray_version=$(xray version | awk '$1=="Xray" {print $2}')
+    local dest2target_xray_version='24.10.31'
+    if _version_ge "${current_xray_version}" "${dest2target_xray_version}"; then
+      "${xray_config_manage}" -d "$(jq -r '.xray.target' /usr/local/etc/xray-script/config.json | grep -Eoi '([a-zA-Z0-9](\-?[a-zA-Z0-9])*\.)+[a-zA-Z]{2,}')"
+      "${xray_config_manage}" -sn "$(jq -c -r '.xray | .serverNames[.target] | .[]' /usr/local/etc/xray-script/config.json | tr '\n' ',')"
+    else
+      "${xray_config_manage}" -d "$(jq -r '.xray.dest' /usr/local/etc/xray-script/config.json | grep -Eoi '([a-zA-Z0-9](\-?[a-zA-Z0-9])*\.)+[a-zA-Z]{2,}')"
+      "${xray_config_manage}" -sn "$(jq -c -r '.xray | .serverNames[.dest] | .[]' /usr/local/etc/xray-script/config.json | tr '\n' ',')"
+    fi
+    _info "已成功修改 dest(target) 与 serverNames"
     _systemctl "restart" "xray"
     show_config
     ;;
