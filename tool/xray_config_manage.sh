@@ -47,7 +47,18 @@ export PATH
 
 readonly op_regex='^(^--(help|path|download|reset|tag|listen|port|protocol|email|uuid|network|dest|(append-)?server-names|not-validate|x25519|((reset|append)-)?shortIds)$)|(^-(prcl|a?sn|(r|a)?sid|[htpeundxl])$)$'
 readonly proto_list=('vless')
-readonly network_list=('tcp' 'h2' 'grpc')
+
+function _version_ge() {
+  test "$(echo "$@" | tr ' ' '\n' | sort -rV | head -n 1)" == "$1"
+}
+
+declare current_xray_version=$(xray version | awk '$1=="Xray" {print $2}')
+declare tcp2raw_xray_version='24.9.30'
+if _version_ge "${current_xray_version}" "${tcp2raw_xray_version}"; then
+  network_list=('raw' 'h2' 'grpc')
+else
+  network_list=('tcp' 'h2' 'grpc')
+fi
 
 declare configPath='/usr/local/etc/xray/config.json'
 declare isDownload=0
@@ -381,12 +392,17 @@ function select_network() {
 function set_dest() {
   local in_tag="${1}"
   local dest="${2}"
+  local dest2target_xray_version='24.10.31'
   if is_UDS "${dest}" || is_domain "${dest}"; then
     dest="${dest#*//}"
     if ! is_UDS "${dest}" && [ "${dest}" == "${dest%:*}" ]; then
       dest="${dest}:443"
     fi
-    jq --arg in_tag "${in_tag}" --arg dest "${dest}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.dest = $dest else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+    if _version_ge "${current_xray_version}" "${dest2target_xray_version}"; then
+      jq --arg in_tag "${in_tag}" --arg dest "${dest}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.target = $dest else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+    else
+      jq --arg in_tag "${in_tag}" --arg dest "${dest}" '.inbounds |= map(if .tag == $in_tag then .streamSettings.realitySettings.dest = $dest else . end)' "${configPath}" >"${HOME}"/new.json && mv -f "${HOME}"/new.json "${configPath}"
+    fi
   else
     echo "Error: Please enter a valid domain name or socket path"
     exit 1
