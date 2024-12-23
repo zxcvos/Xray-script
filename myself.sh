@@ -1138,6 +1138,15 @@ function tcp2raw() {
   fi
 }
 
+function dest2target() {
+  local current_xray_version=$(xray version | awk '$1=="Xray" {print $2}')
+  local dest2target_xray_version='24.10.31'
+  if _version_ge "${current_xray_version}" "${dest2target_xray_version}"; then
+    sed -i 's/"dest"/"target"/' /usr/local/etc/xray/config.json
+    _systemctl "restart" "xray"
+  fi
+}
+
 # install
 function install_xray_config_manage() {
   _info "zh: 下载 xray_config_manage.sh。"
@@ -1316,6 +1325,7 @@ function install() {
   stop
   start
   tcp2raw
+  dest2target
   # View config
   view_config
 }
@@ -1331,6 +1341,7 @@ function update() {
   # Xray
   install_update_xray
   tcp2raw
+  dest2target
   # Nginx
   if source_update; then
     if [[ ! "${is_enable_brotli}" =~ ^[Yy]$ ]]; then
