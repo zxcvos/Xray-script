@@ -389,6 +389,15 @@ function tcp2raw() {
   fi
 }
 
+function dest2target() {
+  local current_xray_version=$(xray version | awk '$1=="Xray" {print $2}')
+  local dest2target_xray_version='24.10.31'
+  if _version_ge "${current_xray_version}" "${dest2target_xray_version}"; then
+    sed -i 's/"dest"/"target"/' /usr/local/etc/xray/config.json
+    _systemctl "restart" "xray"
+  fi
+}
+
 function show_config() {
   local IPv4=$(wget -qO- -t1 -T2 ipv4.icanhazip.com)
   local xs_inbound=$(jq '.inbounds[] | select(.tag == "xray-script-xtls-reality")' /usr/local/etc/xray/config.json)
@@ -533,6 +542,7 @@ function menu() {
       select_dest
       config_xray
       tcp2raw
+      dest2target
       show_config
     fi
     ;;
@@ -544,6 +554,7 @@ function menu() {
       _info "检测到有新版可用"
       install_update_xray
       tcp2raw
+      dest2target
     else
       _info "当前已是最新版本: ${current_xray_version}"
     fi
