@@ -5,19 +5,17 @@
     "access": "/var/log/xray/access.log"
   },
   "api": {
+    "tag": "api",
     "services": [
       "HandlerService",
       "LoggerService",
       "StatsService"
-    ],
-    "tag": "api"
+    ]
   },
   "stats": {},
   "policy": {
     "levels": {
       "0": {
-        "handshake": 2,
-        "connIdle": 128,
         "statsUserUplink": true,
         "statsUserDownlink": true
       }
@@ -29,51 +27,19 @@
       "statsOutboundDownlink": true
     }
   },
-  "dns": {
-    "servers": [
-      "https+local://cloudflare-dns.com/dns-query",
-      "1.1.1.1",
-      "1.0.0.1",
-      "8.8.8.8",
-      "8.8.4.4",
-      "localhost"
-    ]
-  },
   "routing": {
-    "domainStrategy": "IPIfNonMatch",
     "rules": [
       {
+        "ruleTag": "api",
         "inboundTag": [
           "api"
         ],
-        "outboundTag": "api",
-        "type": "field"
+        "outboundTag": "api"
       },
       {
-        "type": "field",
-        "protocol": [
-          "bittorrent"
-        ],
-        "outboundTag": "block"
-      },
-      {
-        "type": "field",
+        "ruleTag": "private-ip",
         "ip": [
           "geoip:private"
-        ],
-        "outboundTag": "block"
-      },
-      {
-        "type": "field",
-        "ip": [
-          "geoip:cn"
-        ],
-        "outboundTag": "block"
-      },
-      {
-        "type": "field",
-        "domain": [
-          "geosite:category-ads-all"
         ],
         "outboundTag": "block"
       }
@@ -81,13 +47,13 @@
   },
   "inbounds": [
     {
+      "tag": "api",
       "listen": "127.0.0.1",
       "port": 32768,
       "protocol": "dokodemo-door",
       "settings": {
         "address": "127.0.0.1"
       },
-      "tag": "api",
       "sniffing": null
     },
     {
@@ -157,7 +123,7 @@
         "network": "xhttp",
         "xhttpSettings": {
           "host": "",
-          "path": "/yourpath/",
+          "path": "/yourpath",
           "mode": "auto"
         },
         "sockopt": {
