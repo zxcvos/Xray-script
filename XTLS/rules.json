@@ -1,0 +1,47 @@
+[
+  {
+    "ruleTag": "api",
+    "inboundTag": [
+      "api"
+    ],
+    "outboundTag": "api"
+  },
+  {
+    "ruleTag": "bt",
+    "protocol": [
+      "bittorrent"
+    ],
+    "outboundTag": "block"
+  },
+  {
+    "ruleTag": "private-ip",
+    "ip": [
+      "geoip:private"
+    ],
+    "outboundTag": "block"
+  },
+  {
+    "ruleTag": "cn-ip",
+    "ip": [
+      "geoip:cn"
+    ],
+    "outboundTag": "block"
+  },
+  {
+    "ruleTag": "warp-domain",
+    "domain": [
+      "domain:ipinfo.io",
+      "domain:cloudflare.com",
+      "domain:nel.cloudflare.com",
+      "domain:reddit.com"
+    ],
+    "outboundTag": "warp"
+  },
+  {
+    "ruleTag": "ad-domain",
+    "domain": [
+      "geosite:category-ads-all"
+    ],
+    "outboundTag": "block"
+  }
+]
