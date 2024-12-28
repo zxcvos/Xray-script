@@ -11,7 +11,16 @@ GEOSITE_URL="https://github.com/Loyalsoldier/v2ray-rules-dat/raw/release/geosite
 cd $XRAY_DIR
 
 curl -L -o geoip.dat.new $GEOIP_URL
+if [ $? -ne 0 ]; then
+  rm -f geoip.dat.new
+  exit 1
+fi
+
 curl -L -o geosite.dat.new $GEOSITE_URL
+if [ $? -ne 0 ]; then
+  rm -f geoip.dat.new geosite.dat.new
+  exit 1
+fi
 
 rm -f geoip.dat geosite.dat
 
