@@ -8,52 +8,18 @@
   "path": "/yourpath/",
   "privateKey": "xray x25519 Private key",
   "publicKey": "xray x25519 Public key",
+  "target": "www.fandom.com",
+  "status": 0,
+  "warp": 0,
   "shortIds": [
+    "",
+    "01",
+    "0123",
+    "012345",
     "01234567",
+    "0123456789",
+    "0123456789ab",
+    "0123456789abcd",
     "0123456789abcdef"
-  ],
-  "target": "tidal.com",
-  "serverNames": {
-    "tidal.com": [
-      "tidal.com"
-    ],
-    "mxj.myanimelist.net": [
-      "mxj.myanimelist.net"
-    ],
-    "www.fandom.com": [
-      "fandom.com",
-      "www.fandom.com",
-      "toarumajutsunoindex.fandom.com",
-      "dragonball.fandom.com",
-      "pokemon.fandom.com",
-      "nichijou.fandom.com",
-      "bleach.fandom.com",
-      "naruto.fandom.com",
-      "onepiece.fandom.com"
-    ],
-    "www.lovelive-anime.jp": [
-      "www.lovelive-anime.jp"
-    ],
-    "www.pixiv.co.jp": [
-      "www.pixiv.co.jp"
-    ],
-    "mora.jp": [
-      "mora.jp"
-    ],
-    "www.j-wave.co.jp": [
-      "www.j-wave.co.jp"
-    ],
-    "booth.pm": [
-      "booth.pm"
-    ],
-    "www.ivi.tv": [
-      "www.ivi.tv"
-    ],
-    "www.leercapitulo.co": [
-      "www.leercapitulo.co"
-    ],
-    "www.sky.com": [
-      "www.sky.com"
-    ]
-  }
+  ]
 }
