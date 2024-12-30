@@ -11,9 +11,9 @@ else
   warp-svc >&/dev/null &
   sleep 5
   echo "Registering Cloudflare WARP"
-  warp-cli --accept-tos register
+  warp-cli --accept-tos registration new
   echo "Setting Cloudflare WARP mode to proxy"
-  warp-cli --accept-tos set-mode proxy
+  warp-cli --accept-tos mode proxy
   echo "Connecting Cloudflare WARP"
   warp-cli --accept-tos connect
   echo "Done, killing daemon and exiting. This container should work after restart."
