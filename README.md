@@ -59,7 +59,7 @@
 Copyright (C) zxcvos | https://github.com/zxcvos/Xray-script
 
 -------------------------------------------
-Xray       : v24.12.28
+Xray       : v24.12.31
 CONFIG     : VLESS-XHTTP-REALITY
 WARP Proxy : 已启动
 -------------------------------------------
