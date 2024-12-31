@@ -254,7 +254,7 @@ function check_xray_script_version() {
   local url="https://api.github.com/repos/zxcvos/Xray-script/contents"
   local local_size=$(stat -c %s "${CUR_DIR}/${CUR_FILE}")
   local remote_size=$(curl -fsSL "$url" | jq -r '.[] | select(.name == "xhttp.sh") | .size')
-  if [[ local_size -ne remote_size ]]; then
+  if [[ ${local_size} -ne ${remote_size} ]]; then
     _info '发现有新脚本, 是否更新'
     _input_tips '退出脚本并显示更新命令 [Y/n] '
     read -r is_update_script
