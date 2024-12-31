@@ -1,19 +1,19 @@
-# Xray-REALITY 管理脚本
+# Xray-XHTTP 管理脚本
 
 * 一个纯 Shell 编写的 XHTTP 管理脚本
 * 可选配置:
   * VLESS-mKCP
   * VLESS-Vision-REALITY
-  * VLESS-XHTTP-REALITY(默认)
+  * VLESS-XHTTP-REALITY
   * Trojan-XHTTP-REALITY
   * VLESS-Vision-REALITY(fallback: VLESS-XHTTP-REALITY)
-* 开关 Cloudflare WARP Proxy(Docker 部署)
 * 规则配置与自填:
   * 禁止 bittorrent 流量
   * 禁止回国 ip 流量
   * 屏蔽广告
-  * 添加 WARP Proxy 分流
-  * 添加屏蔽分流
+  * 添加自定义 WARP Proxy 分流
+  * 添加自定义屏蔽分流
+* 开关 Cloudflare WARP Proxy(Docker 部署)
 * 开关 geodata 自动更新功能
 * xray 端口默认与自填:
   * VLESS-mKCP: 随机生成
