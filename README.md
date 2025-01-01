@@ -1,4 +1,4 @@
-# Xray-XHTTP 管理脚本
+# Xray-XHTTP 管理脚本 :sparkles:
 
 * 一个纯 Shell 编写的 XHTTP 管理脚本
 * 可选配置:
@@ -8,12 +8,12 @@
   * Trojan-XHTTP-REALITY
   * VLESS-Vision-REALITY(fallback: VLESS-XHTTP-REALITY)
 * 规则配置与自填:
-  * 禁止 bittorrent 流量
-  * 禁止回国 ip 流量
-  * 屏蔽广告
+  * 禁止 bittorrent 流量(可选)
+  * 禁止回国 ip 流量(可选)
+  * 屏蔽广告(可选)
   * 添加自定义 WARP Proxy 分流
   * 添加自定义屏蔽分流
-* 开关 Cloudflare WARP Proxy(Docker 部署)
+* 开关 Cloudflare WARP Proxy( :whale: Docker 部署)
 * 开关 geodata 自动更新功能
 * xray 端口默认与自填:
   * VLESS-mKCP: 随机生成
