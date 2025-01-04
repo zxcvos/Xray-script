@@ -182,6 +182,16 @@ function _is_tls1_3_h2() {
   fi
 }
 
+function _is_network_reachable() {
+  local url="$1"
+  curl -s --head --connect-timeout 5 "$url" > /dev/null
+  if [ $? -eq 0 ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
 function _install() {
   local packages_name="$@"
   case "$(_os)" in
@@ -615,6 +625,10 @@ function read_domain() {
       break
     fi
     check_domain=$(echo ${in_domain} | grep -oE '[^/]+(\.[^/]+)+\b' | head -n 1)
+    if ! _is_network_reachable "${check_domain}"; then
+      _warn "\"${check_domain}\" 无法连接"
+      continue
+    fi
     if ! _is_tls1_3_h2 "${check_domain}"; then
       _warn "\"${check_domain}\" 不支持 TLSv1.3 或 h2 ，亦或者 Client Hello 不是 X25519"
       _info "如果你明确知道 \"${check_domain}\" 支持 TLSv1.3(h2), X25519, 可能是识别错误, 可选择直接跳过检查"
@@ -699,8 +713,11 @@ function generate_target() {
 
 function generate_server_names() {
   local target=${1%:443}
-  local all_sns=$(xray tls ping ${target} | sed -n '/with SNI/,$p' | sed -En 's/\[(.*)\]/\1/p' | sed -En 's/Allowed domains:\s*//p' | jq -R -c 'split(" ")' | jq --arg sni "${target}" '. += [$sni]')
-  local sns=$(echo ${all_sns} | jq 'map(select(test("^[^*]+$"; "g")))' | jq -c 'map(select(test("^((?!cloudflare|akamaized|edgekey|edgesuite|cloudfront|azureedge|msecnd|edgecastcdn|fastly|googleusercontent|kxcdn|maxcdn|stackpathdns|stackpathcdn|policy|privacy).)*$"; "ig")))' | jq 'unique')
+  local local_target=$(jq --arg key  "${target}" '. | has($key)' /usr/local/xray-script/serverNames.json)
+  if [[ "${local_target}" == "false" ]]; then
+    local all_sns=$(xray tls ping ${target} | sed -n '/with SNI/,$p' | sed -En 's/\[(.*)\]/\1/p' | sed -En 's/Allowed domains:\s*//p' | jq -R -c 'split(" ")' | jq --arg sni "${target}" '. += [$sni]')
+    local sns=$(echo ${all_sns} | jq 'map(select(test("^[^*]+$"; "g")))' | jq -c 'map(select(test("^((?!cloudflare|akamaized|edgekey|edgesuite|cloudfront|azureedge|msecnd|edgecastcdn|fastly|googleusercontent|kxcdn|maxcdn|stackpathdns|stackpathcdn|policy|privacy).)*$"; "ig")))' | jq 'unique')
+  fi
   jq --arg key "${target}" --argjson serverNames "${sns}" '
   if . | has($key) then
     .
