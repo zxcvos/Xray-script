@@ -38,6 +38,10 @@
   * 随机生成(格式: /8ugSUeNJ.9OEnTErb.dVZMUAFu)
   * 自定义输入(格式: /8ugSUeNJ, 加不加 `/` 都可以)
 
+## 分享链接标准
+
+基于[VMessAEAD / VLESS 分享链接标准提案](https://github.com/XTLS/Xray-core/discussions/716)与[v2rayN](https://github.com/2dust/v2rayN)实现，如果其他客户端无法正常使用，请自行根据分享链接进行修改。
+
 ## 如何使用
 
 * wget
