@@ -184,7 +184,7 @@ function _is_tls1_3_h2() {
 
 function _is_network_reachable() {
   local url="$1"
-  curl -s --head --connect-timeout 5 "$url" > /dev/null
+  curl -s --head --connect-timeout 5 "$url" >/dev/null
   if [ $? -eq 0 ]; then
     return 0
   else
@@ -297,6 +297,29 @@ function check_os() {
     _error "Not supported OS"
     ;;
   esac
+}
+
+function check_dependencies() {
+  local missing_packages=()
+  case "$(_os)" in
+  centos)
+    local packages=("ca-certificates" "openssl" "curl" "wget" "jq" "tzdata" "qrencode" "crontabs" "util-linux" "iproute" "procps-ng")
+    for pkg in "${packages[@]}"; do
+      if ! rpm -q "$pkg" &>/dev/null; then
+        missing_packages+=("$pkg")
+      fi
+    done
+    ;;
+  debian | ubuntu)
+    local packages=("ca-certificates" "openssl" "curl" "wget" "jq" "tzdata" "qrencode" "cron" "bsdmainutils" "iproute2" "procps")
+    for pkg in "${packages[@]}"; do
+      if ! dpkg -s "$pkg" &>/dev/null; then
+        missing_packages+=("$pkg")
+      fi
+    done
+    ;;
+  esac
+  [ ${#missing_packages[@]} -eq 0 ]
 }
 
 function install_dependencies() {
@@ -713,7 +736,7 @@ function generate_target() {
 
 function generate_server_names() {
   local target=${1%:443}
-  local local_target=$(jq --arg key  "${target}" '. | has($key)' /usr/local/xray-script/serverNames.json)
+  local local_target=$(jq --arg key "${target}" '. | has($key)' /usr/local/xray-script/serverNames.json)
   if [[ "${local_target}" == "false" ]]; then
     local all_sns=$(xray tls ping ${target} | sed -n '/with SNI/,$p' | sed -En 's/\[(.*)\]/\1/p' | sed -En 's/Allowed domains:\s*//p' | jq -R -c 'split(" ")' | jq --arg sni "${target}" '. += [$sni]')
     local sns=$(echo ${all_sns} | jq 'map(select(test("^[^*]+$"; "g")))' | jq -c 'map(select(test("^((?!cloudflare|akamaized|edgekey|edgesuite|cloudfront|azureedge|msecnd|edgecastcdn|fastly|googleusercontent|kxcdn|maxcdn|stackpathdns|stackpathcdn|policy|privacy).)*$"; "ig")))' | jq 'unique')
@@ -1092,6 +1115,10 @@ function restart_xray() {
 }
 
 function view_xray_config() {
+  local remote_host=$(curl -fsSL ipv4.icanhazip.com)
+  local port=$(jq -r '.inbounds[1].port' /usr/local/etc/xray/config.json)
+  _warn '请确保使用端口以开放'
+  _info "验证端口开放链接: https://tcp.ping.pe/${remote_host}:${port}"
   _info "根据已有配置文件, 随机获取 serverName 和 shortId 自动生成分享链接与二维码"
   XTLS_CONFIG=$(jq -r '.tag' /usr/local/xray-script/config.json)
   case ${XTLS_CONFIG} in
@@ -1192,8 +1219,11 @@ function main_processes() {
   _input_tips '请选择操作: '
   read -r choose
 
-  if ! [[ -d /usr/local/xray-script ]]; then
+  if ! check_dependencies; then
     install_dependencies
+  fi
+
+  if ! [[ -d /usr/local/xray-script ]]; then
     mkdir -p /usr/local/xray-script
     wget --no-check-certificate -q -O /usr/local/xray-script/config.json https://raw.githubusercontent.com/zxcvos/Xray-script/refs/heads/main/XTLS/config.json
     wget --no-check-certificate -q -O /usr/local/xray-script/serverNames.json https://raw.githubusercontent.com/zxcvos/Xray-script/refs/heads/main/XTLS/serverNames.json
