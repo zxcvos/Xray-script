@@ -741,7 +741,7 @@ function generate_server_names() {
     local all_sns=$(xray tls ping ${target} | sed -n '/with SNI/,$p' | sed -En 's/\[(.*)\]/\1/p' | sed -En 's/Allowed domains:\s*//p' | jq -R -c 'split(" ")' | jq --arg sni "${target}" '. += [$sni]')
     local sns=$(echo ${all_sns} | jq 'map(select(test("^[^*]+$"; "g")))' | jq -c 'map(select(test("^((?!cloudflare|akamaized|edgekey|edgesuite|cloudfront|azureedge|msecnd|edgecastcdn|fastly|googleusercontent|kxcdn|maxcdn|stackpathdns|stackpathcdn|policy|privacy).)*$"; "ig")))' | jq 'unique')
   fi
-  jq --arg key "${target}" --argjson serverNames "${sns}" '
+  jq --arg key "${target}" --argjson serverNames "${sns:-[]}" '
   if . | has($key) then
     .
   else
