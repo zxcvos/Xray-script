@@ -38,7 +38,7 @@
   * 随机生成(格式: /8ugSUeNJ.9OEnTErb.dVZMUAFu)
   * 自定义输入(格式: /8ugSUeNJ, 加不加 `/` 都可以)
 
-## 分享链接标准
+## 分享链接
 
 基于[VMessAEAD / VLESS 分享链接标准提案](https://github.com/XTLS/Xray-core/discussions/716)与[v2rayN](https://github.com/2dust/v2rayN)实现，如果其他客户端无法正常使用，请自行根据分享链接进行修改。
 
@@ -49,6 +49,10 @@
   ```sh
   wget --no-check-certificate -O ${HOME}/Xray-script.sh https://raw.githubusercontent.com/zxcvos/Xray-script/main/xhttp.sh && bash ${HOME}/Xray-script.sh
   ```
+
+## 问题
+
+安装成功，但无法使用，请检查是否开启对应端口。可通过 `https://tcp.ping.pe/ip:port` 验证端口是否开放。
 
 ## 脚本界面
 
