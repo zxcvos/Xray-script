@@ -44,7 +44,19 @@
 
 ## 如何使用
 
-* wget
+* 获取
+
+  ```sh
+  wget --no-check-certificate -O ${HOME}/Xray-script.sh https://raw.githubusercontent.com/zxcvos/Xray-script/main/xhttp.sh
+  ```
+  
+* 使用
+
+  ```sh
+  bash ${HOME}/Xray-script.sh
+  ```
+
+* 快速启动
 
   ```sh
   wget --no-check-certificate -O ${HOME}/Xray-script.sh https://raw.githubusercontent.com/zxcvos/Xray-script/main/xhttp.sh && bash ${HOME}/Xray-script.sh
