@@ -11,6 +11,18 @@
   "target": "www.fandom.com",
   "status": 0,
   "warp": 0,
+  "sni": {
+    "domain": "",
+    "cdn": "",
+    "uuid": "",
+    "nginx": 0,
+    "status": 0
+  },
+  "cloudreve": {
+    "version": "",
+    "username": "",
+    "password": ""
+  },
   "shortIds": [
     "",
     "01",
