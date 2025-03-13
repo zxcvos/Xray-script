@@ -3,23 +3,20 @@
 # System Required:  CentOS 7+, Debian9+, Ubuntu16+
 # Description:      Script to Xray manage
 #
-# Copyright (C) 2024 zxcvos
+# Copyright (C) 2025 zxcvos
+#
+# Xray-script:
+#   https://github.com/zxcvos/Xray-script
 #
 # Xray Official:
 #   Xray-core: https://github.com/XTLS/Xray-core
 #   REALITY: https://github.com/XTLS/REALITY
 #   XHTTP: https://github.com/XTLS/Xray-core/discussions/4113
-# Xray-script:
-#   https://github.com/zxcvos/Xray-script
+#
 # Xray-examples:
 #   https://github.com/chika0801/Xray-examples
 #   https://github.com/lxhao61/integrated-examples
 #   https://github.com/XTLS/Xray-core/discussions/4118
-# docker-install:
-#   https://github.com/docker/docker-install
-# Cloudflare WARP Proxy:
-#   https://github.com/haoel/haoel.github.io?tab=readme-ov-file#1043-docker-%E4%BB%A3%E7%90%86
-#   https://github.com/e7h4n/cloudflare-warp
 
 PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin:/snap/bin
 export PATH
@@ -260,6 +257,37 @@ function _systemctl() {
   esac
 }
 
+function download_github_files() {
+  local conf_dir="${1:-/usr/local/xray-script}"
+  local github_api="${2:-https://api.github.com/repos/zxcvos/Xray-script/contents}"
+
+  # 通过 GitHub API 获取目录/文件名
+  local download_urls=$(curl -s ${github_api} | jq -r '.[] | select(.type=="file") | .download_url')
+  local dirs=$(curl -s ${github_api} | jq -r '.[] | select(.type=="dir") | .name')
+
+  # 创建目录，并递归下载子目录下的所有文件
+  for dir in $dirs; do
+    mkdir -vp ${conf_dir}/${dir} || {
+      echo "目录创建失败"
+      return 1
+    }
+    download_github_files ${conf_dir}/${dir} ${github_api}/${dir}
+  done
+
+  # 遍历下载
+  for download_url in $download_urls; do
+    local file=${download_url##*/}
+    echo "正在下载 ${file}..."
+    wget --no-check-certificate -O "${conf_dir}/${file}" "${download_url}" || {
+      echo "下载失败: ${file}"
+      continue
+    }
+    chmod 0644 "${conf_dir}/${file}"
+  done
+
+  echo "Github 文件已下载到 ${conf_dir}"
+}
+
 function check_xray_script_version() {
   local url="https://api.github.com/repos/zxcvos/Xray-script/contents"
   local local_size=$(stat -c %s "${CUR_DIR}/${CUR_FILE}")
@@ -278,6 +306,30 @@ function check_xray_script_version() {
       exit 0
       ;;
     esac
+  fi
+}
+
+# 检查 DNS 解析
+function check_dns_resolution() {
+  local domain=$1
+  # 获取本机公网 IPv4 与 IPv6
+  local expected_ipv4="$(curl -fsSL ipv4.icanhazip.com)"
+  local expected_ipv6="$(curl -fsSL ipv6.icanhazip.com)"
+  local resolved=0
+  # 使用 dig 命令查询域名的 DNS 解析记录
+  local actual_ipv4="$(dig +short "${domain}")"
+  local actual_ipv6="$(dig +short AAAA "${domain}")"
+  # 检查解析的 IPv4 是否与本机公网 IPv4 一致
+  if [[ "${actual_ipv4}" =~ "${expected_ipv4}" ]]; then
+    resolved=1
+  fi
+  # 检查解析的 IPv6 是否与本机公网 IPv6 一致
+  if [[ "${actual_ipv6}" =~ "${expected_ipv6}" ]]; then
+    resolved=1
+  fi
+  # IPv4 或 IPv6 解析都不成功，则报错误
+  if [[ ${resolved} -eq 0 ]]; then
+    _warn "域名 ${domain} 未解析为本机公网的 IPv4 或 IPv6, 可能无法正常的申请 SSL 证书"
   fi
 }
 
@@ -335,29 +387,6 @@ function install_dependencies() {
   esac
 }
 
-function install_docker() {
-  if ! _exists "docker"; then
-    wget --no-check-certificate -O /usr/local/xray-script/install-docker.sh https://get.docker.com
-    if [[ "$(_os)" == "centos" && "$(_os_ver)" -eq 8 ]]; then
-      sed -i 's|$sh_c "$pkg_manager install -y -q $pkgs"| $sh_c "$pkg_manager install -y -q $pkgs --allowerasing"|' /usr/local/xray-script/install-docker.sh
-    fi
-    sh /usr/local/xray-script/install-docker.sh --dry-run
-    sh /usr/local/xray-script/install-docker.sh
-  fi
-}
-
-function build_cloudflare_warp() {
-  if [[ "${WARP}" -ne 1 && ! -d /usr/local/xray-script/warp ]]; then
-    _info '正在构建 WARP Proxy 镜像'
-    mkdir -p /usr/local/xray-script/warp
-    mkdir -p ${HOME}/.warp
-    _error_detect "wget --no-check-certificate -O /usr/local/xray-script/warp/Dockerfile https://raw.githubusercontent.com/zxcvos/Xray-script/main/cloudflare-warp/Dockerfile"
-    _error_detect "wget --no-check-certificate -O /usr/local/xray-script/warp/startup.sh https://raw.githubusercontent.com/zxcvos/Xray-script/main/cloudflare-warp/startup.sh"
-    cd /usr/local/xray-script/warp
-    docker build -t xray-script-warp .
-  fi
-}
-
 function get_random_number() {
   local custom_min=${1}
   local custom_max=${2}
@@ -391,27 +420,53 @@ function check_xray_version_is_exists() {
 }
 
 function enable_warp() {
-  if [[ "${WARP}" -ne 1 ]]; then
-    _info '正在开启 WARP Proxy 容器'
-    docker run -v "${HOME}/.warp":/var/lib/cloudflare-warp:rw --restart=always --name=xray-script-warp xray-script-warp
-    local outbounds='[{"tag":"warp","protocol":"socks","settings":{"servers":[{"address":"172.17.0.2","port":40001}]}}]'
-    jq --argjson outbounds $outbounds '.outbounds += $outbounds' /usr/local/etc/xray/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/etc/xray/config.json
-    jq --argjson warp 1 '.warp = $warp' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
-  fi
+  bash /usr/local/xray-script/docker.sh --enable-warp
 }
 
 function disable_warp() {
-  if [[ "${WARP}" -eq 1 ]]; then
-    _info '正在关闭 WARP Proxy 容器'
-    docker stop xray-script-warp
-    docker rm xray-script-warp
-    docker image rm xray-script-warp
-    rm -rf /usr/local/xray-script/warp
-    rm -rf ${HOME}/.warp
-    jq '.outbounds |= map(select(.tag != "warp"))' /usr/local/etc/xray/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/etc/xray/config.json
-    jq '.routing.rules |= map(select(.outboundTag != "warp"))' /usr/local/etc/xray/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/etc/xray/config.json
-    jq --argjson warp 0 '.warp = $warp' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
+  bash /usr/local/xray-script/docker.sh --disable-warp
+}
+
+function enable_nginx_cron() {
+  local nginx_status=$(jq -r '.sni.status' /usr/local/xray-script/config.json)
+  if [[ ${nginx_status} -eq 1 ]]; then
+    chmod a+x /usr/local/xray-script/nginx.sh
+    (
+      crontab -l 2>/dev/null
+      echo "0 3 * * * /usr/local/xray-script/nginx.sh -u -b >/dev/null 2>&1"
+    ) | awk '!x[$0]++' | crontab -
+    /usr/local/xray-script/update-dat.sh
   fi
+}
+
+function disable_nginx_cron() {
+  crontab -l | grep -v "/usr/local/xray-script/nginx.sh -u -b >/dev/null 2>&1" | crontab -
+}
+
+function change_domain() {
+  local nginx_status=$(jq -r '.sni.status' /usr/local/xray-script/config.json)
+  if [[ ${nginx_status} -eq 1 ]]; then
+    read_sni_cdn_domain
+    jq --arg target "${reality_domain}" '.target = $target' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
+    _info "target: ${reality_domain}"
+    _info "cdn: ${cdn_domain}"
+    SERVER_NAMES="$(echo '["'"${reality_domain}"'"]' | jq -r)"
+    setup_ssl
+  fi
+}
+
+function show_cloudreve_data() {
+  local cloudreve_version=$(jq -r '.cloudreve.version' /usr/local/xray-script/config.json)
+  local cloudreve_username=$(jq -r '.cloudreve.username' /usr/local/xray-script/config.json)
+  local cloudreve_password=$(jq -r '.cloudreve.password' /usr/local/xray-script/config.json)
+  echo "Cloudreve 版本: ${cloudreve_version}"
+  echo "Cloudreve 账号: ${cloudreve_username}"
+  echo "Cloudreve 密码: ${cloudreve_password}"
+}
+
+function reset_cloudreve_data() {
+  bash /usr/local/xray-script/docker.sh --reset-cloudreve
+  show_cloudreve_data
 }
 
 function enable_cron() {
@@ -668,6 +723,26 @@ function read_domain() {
   in_domain=${check_domain}
 }
 
+function read_sni_cdn_domain() {
+  _input_tips '请输入域名(REALITY): '
+  read -r reality_domain
+  check_dns_resolution ${reality_domain}
+  _info '如果 CDN 域名为空，则默认与 REALITY 使用同一域名'
+  _input_tips '请输入域名(CDN): '
+  read -r cdn_domain
+  if [[ -z ${cdn_domain} ]]; then
+    cdn_domain=${reality_domain}
+  else
+    check_dns_resolution ${cdn_domain}
+  fi
+}
+
+function read_zero_ssl_account_email() {
+  _info '该邮箱用于注册 ZeroSSL ，如果不输入则默认使用 acme.sh 示例中的 my@example.com'
+  _input_tips '请输入邮箱: '
+  read -r account_email
+}
+
 function read_short_ids() {
   if [[ ${IS_AUTO} =~ ^[Yy]$ ]]; then
     return
@@ -799,20 +874,63 @@ function generate_path() {
 }
 
 function get_xray_config_data() {
+  # 判断是否重置配置
   if [[ "${STATUS}" -ne 1 ]]; then
     read_block_bt
     read_block_cn_ip
     read_block_ads
     read_update_geodata
   fi
-  read_port
-  XRAY_PORT=$(generate_port "${in_port}")
+
+  # 判断之前配置是否为 sni
+  local nginx_status=$(jq -r '.sni.status' /usr/local/xray-script/config.json)
+  if [[ ${nginx_status} -eq 1 && 'sni' != ${XTLS_CONFIG} ]]; then
+    stop_renew_ssl
+    bash /usr/local/xray-script/docker.sh --purge-cloudreve
+    _systemctl stop nginx
+    jq '.sni.status = 0' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
+    jq '.sni.domain = ""' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
+    jq '.sni.cdn = ""' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
+  fi
+
+  # 端口设置
+  if [[ 'sni' == ${XTLS_CONFIG} ]]; then
+    _info 'SNI 配置端口不支持修改，默认为 443'
+    XRAY_PORT=443
+  else
+    read_port
+    XRAY_PORT=$(generate_port "${in_port}")
+  fi
   _info "port: ${XRAY_PORT}"
+
+  # 设置域名相关配置
+  case ${XTLS_CONFIG} in
+  xhttp | vision | trojan | fallback)
+    read_domain
+    TARGET_DOMAIN="$(generate_target "${in_domain}")"
+    _info "target: ${TARGET_DOMAIN}"
+    SERVER_NAMES="$(generate_server_names "${TARGET_DOMAIN}")"
+    _info "server names: ${SERVER_NAMES}"
+    ;;
+  sni)
+    [[ -e "${HOME}/.acme.sh/acme.sh" ]] || read_zero_ssl_account_email
+    read_sni_cdn_domain
+    jq --arg target "${reality_domain}" '.target = $target' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
+    _info "target: ${reality_domain}"
+    _info "cdn: ${cdn_domain}"
+    SERVER_NAMES="$(echo '["'"${reality_domain}"'"]' | jq -r)"
+    _info "server names: ${SERVER_NAMES}"
+    ;;
+  esac
+
+  # 所有配置通用设置
   jq --argjson port "${XRAY_PORT}" '.port = $port' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
   read_uuid
   XRAY_UUID="$(generate_uuid "${in_uuid}")"
   _info "UUID: ${XRAY_UUID}"
   jq --arg uuid "${XRAY_UUID}" '.uuid = $uuid' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
+
+  # 根据配置设置加密信息
   case ${XTLS_CONFIG} in
   mkcp)
     read_seed
@@ -833,22 +951,28 @@ function get_xray_config_data() {
     _info "fallback UUID: ${FALLBACK_UUID}"
     jq --arg uuid "${FALLBACK_UUID}" '.fallback = $uuid' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
     ;;
+  sni)
+    _info "设置 sni UUID"
+    read_uuid
+    SNI_UUID="$(generate_uuid "${in_uuid}")"
+    _info "sni UUID: ${SNI_UUID}"
+    jq --arg uuid "${SNI_UUID}" '.sni.uuid = $uuid' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
+    ;;
   esac
+
+  # 设置 XHTTP 的 path
   case ${XTLS_CONFIG} in
-  xhttp | trojan | fallback)
+  xhttp | trojan | fallback | sni)
     read_path
     XHTTP_PATH="$(generate_path "${in_path}")"
     _info "path: ${XHTTP_PATH}"
     jq --arg path "${XHTTP_PATH}" '.path = $path' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
     ;;
   esac
+
+  # 设置 REALITY 相关配置
   case ${XTLS_CONFIG} in
-  xhttp | vision | trojan | fallback)
-    read_domain
-    TARGET_DOMAIN="$(generate_target "${in_domain}")"
-    _info "target: ${TARGET_DOMAIN}"
-    SERVER_NAMES="$(generate_server_names "${TARGET_DOMAIN}")"
-    _info "server names: ${SERVER_NAMES}"
+  xhttp | vision | trojan | fallback | sni)
     generate_xray_x25519
     read_short_ids
     SHORT_IDS="$(generate_short_ids "${in_short_id}")"
@@ -1054,6 +1178,58 @@ function get_fallback_xhttp_data() {
   SHARE_LINK="${protocol}://${uuid}@${remote_host}:${port}?type=${type}&security=${security}&sni=${server_name}&pbk=${public_key}&sid=${short_id}&path=%2F${path#/}&spx=%2F&fp=chrome#${tag}"
 }
 
+function set_sni_data() {
+  jq --arg uuid "${XRAY_UUID}" '.inbounds[1].settings.clients[0].id = $uuid' /usr/local/xray-script/xtls.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/xtls.json
+  jq --argjson serverNames "${SERVER_NAMES}" '.inbounds[1].streamSettings.realitySettings.serverNames = $serverNames' /usr/local/xray-script/xtls.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/xtls.json
+  jq --arg privateKey "${PRIVATE_KEY}" '.inbounds[1].streamSettings.realitySettings.privateKey = $privateKey' /usr/local/xray-script/xtls.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/xtls.json
+  jq --argjson shortIds "${SHORT_IDS}" '.inbounds[1].streamSettings.realitySettings.shortIds = $shortIds' /usr/local/xray-script/xtls.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/xtls.json
+  jq --arg uuid "${SNI_UUID}" '.inbounds[2].settings.clients[0].id = $uuid' /usr/local/xray-script/xtls.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/xtls.json
+  jq --arg path "${XHTTP_PATH}" '.inbounds[2].streamSettings.xhttpSettings.path = $path' /usr/local/xray-script/xtls.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/xtls.json
+}
+
+function get_sni_data() {
+  local sni_type="$1"
+  local sni_security="$2"
+  # -- protocol --
+  local protocol=$(jq -r '.inbounds[1].protocol' /usr/local/etc/xray/config.json)
+  # -- uuid --
+  local uuid=$(jq -r '.inbounds[1].settings.clients[0].id' /usr/local/etc/xray/config.json)
+  [[ 'xhttp' == "${sni_type}" ]] && uuid=$(jq -r '.inbounds[2].settings.clients[0].id' /usr/local/etc/xray/config.json)
+  # -- remote_host --
+  local remote_host=$(curl -fsSL ipv4.icanhazip.com)
+  # -- port --
+  local port=$(jq -r '.port' /usr/local/xray-script/config.json)
+  # -- type --
+  local type=$(jq -r '.inbounds[1].streamSettings.network' /usr/local/etc/xray/config.json)
+  [[ 'xhttp' == "${sni_type}" ]] && type=$(jq -r '.inbounds[2].streamSettings.network' /usr/local/etc/xray/config.json)
+  # -- flow --
+  local flow=$(jq -r '.inbounds[1].settings.clients[0].flow' /usr/local/etc/xray/config.json)
+  # -- security --
+  local security=$(jq -r '.inbounds[1].streamSettings.security' /usr/local/etc/xray/config.json)
+  [[ 'cdn' == "${sni_security}" ]] && security='tls'
+  # -- serverName --
+  local server_names_length=$(jq -r '.inbounds[1].streamSettings.realitySettings.serverNames | length' /usr/local/etc/xray/config.json)
+  local server_names_random=$(get_random_number 0 ${server_names_length})
+  local server_name=$(jq '.inbounds[1].streamSettings.realitySettings.serverNames | .[]' /usr/local/etc/xray/config.json | shuf | jq -s -r --argjson i ${server_names_random} '.[$i]')
+  [[ 'cdn' == "${sni_security}" ]] && server_name=$(jq -r '.sni.cdn' /usr/local/xray-script/config.json)
+  # -- public_key --
+  local public_key=$(jq -r '.publicKey' /usr/local/xray-script/config.json)
+  # -- shortId --
+  local short_ids_length=$(jq -r '.inbounds[1].streamSettings.realitySettings.shortIds | length' /usr/local/etc/xray/config.json)
+  local short_ids_random=$(get_random_number 0 ${short_ids_length})
+  local short_id=$(jq '.inbounds[1].streamSettings.realitySettings.shortIds | .[]' /usr/local/etc/xray/config.json | shuf | jq -s -r --argjson i ${short_ids_random} '.[$i]')
+  # -- path --
+  local path=$(jq -r '.inbounds[2].streamSettings.xhttpSettings.path' /usr/local/etc/xray/config.json)
+  # -- tag --
+  local tag='vision_reality'
+  [[ 'xhttp' == "${sni_type}" ]] && tag='xhttp_reality'
+  [[ 'cdn' == "${sni_security}" ]] && tag='xhttp_cdn'
+  # -- SHARE_LINK --
+  SHARE_LINK="${protocol}://${uuid}@${remote_host}:${port}?type=${type}&flow=${flow}&security=${security}&sni=${server_name}&pbk=${public_key}&sid=${short_id}&spx=%2F&fp=chrome#${tag}"
+  [[ 'xhttp' == "${sni_type}" ]] && SHARE_LINK="${protocol}://${uuid}@${remote_host}:${port}?type=${type}&security=${security}&sni=${server_name}&pbk=${public_key}&sid=${short_id}&path=%2F${path#/}&spx=%2F&fp=chrome#${tag}"
+  [[ 'cdn' == "${sni_security}" ]] && SHARE_LINK="${protocol}://${uuid}@${remote_host}:${port}?type=${type}&security=${security}&sni=${server_name}&host=${server_name}&alpn=h2&pbk=${public_key}&path=%2F${path#/}&spx=%2F&fp=chrome#${tag}"
+}
+
 function set_routing_and_outbounds() {
   if [[ "${STATUS}" -eq 1 ]]; then
     local routing=$(jq -r '.' /usr/local/xray-script/routing.json)
@@ -1076,6 +1252,7 @@ function setup_xray_config_data() {
   xhttp) set_xhttp_data ;;
   trojan) set_trojan_data ;;
   fallback) set_fallback_data ;;
+  sni) set_sni_data ;;
   esac
   set_routing_and_outbounds
   mv -f /usr/local/xray-script/xtls.json /usr/local/etc/xray/config.json
@@ -1083,7 +1260,86 @@ function setup_xray_config_data() {
   add_rule_block_cn_ip
   add_rule_block_ads
   add_update_geodata
+  [[ 'sni' == ${XTLS_CONFIG} ]] && {
+    bash /usr/local/xray-script/ssl.sh --install --email "${account_email:-my@example.com}"
+    bash /usr/local/xray-script/docker.sh --install-cloudreve
+    setup_nginx
+    setup_nginx_config_data
+    setup_ssl
+    show_cloudreve_data
+    _systemctl restart nginx
+  }
   restart_xray
+}
+
+function setup_nginx() {
+  local nginx_status=$(jq -r '.sni.nginx' /usr/local/xray-script/config.json)
+  [[ ${nginx_status} -ne 1 ]] && {
+    bash /usr/local/xray-script/nginx.sh -i -b
+    jq '.sni.nginx = 1' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
+  }
+}
+
+function setup_nginx_config_data() {
+  [[ -f /usr/local/nginx/conf/nginxconfig.txt ]] || {
+    download_github_files '/usr/local/nginx/conf' 'https://api.github.com/repos/zxcvos/Xray-script/contents/nginx/conf'
+    mkdir -vp /usr/local/nginx/conf/sites-enabled
+    mkdir -vp /var/log/nginx
+    rm -rf /usr/local/nginx/conf/limit.conf
+  }
+}
+
+function stop_renew_ssl() {
+  # 获取旧数据
+  local old_domain=$(jq -r '.sni.domain' /usr/local/xray-script/config.json)
+  local old_cdn=$(jq -r '.sni.cdn' /usr/local/xray-script/config.json)
+
+  # 检查旧域名，不为空则停止旧域名续订
+  [[ -z "${old_domain}" ]] || {
+    bash /usr/local/xray-script/ssl.sh -s -d ${old_domain}
+    rm -rf /usr/local/nginx/conf/sites-{available,enabled}/${old_domain}.conf
+  }
+  [[ -z "${old_cdn}" ]] || [[ ${old_domain} == ${old_cdn} ]] || {
+    bash /usr/local/xray-script/ssl.sh -s -d ${old_cdn}
+    rm -rf /usr/local/nginx/conf/sites-{available,enabled}/${old_cdn}.conf
+  }
+}
+
+function setup_ssl() {
+  stop_renew_ssl
+  # 设置新域名对应的 nginx 配置文件
+  wget --no-check-certificate -O /usr/local/nginx/conf/modules-enabled/stream.conf https://raw.githubusercontent.com/zxcvos/Xray-script/main/nginx/conf/modules-enabled/stream.conf
+  sed -i "s| example.com| ${reality_domain}|g" /usr/local/nginx/conf/modules-enabled/stream.conf
+  sed -i "s|# cdn.example.com|# ${cdn_domain}|g" /usr/local/nginx/conf/modules-enabled/stream.conf
+
+  wget --no-check-certificate -O /usr/local/nginx/conf/sites-available/${reality_domain}.conf https://raw.githubusercontent.com/zxcvos/Xray-script/main/nginx/conf/sites-available/example.com.conf
+  sed -i "s|example.com|${reality_domain}|g" /usr/local/nginx/conf/sites-available/${reality_domain}.conf
+  sed -i "s|/yourpath|${XHTTP_PATH}|g" /usr/local/nginx/conf/sites-available/${reality_domain}.conf
+
+  [[ ${reality_domain} == ${cdn_domain} ]] || {
+    wget --no-check-certificate -O /usr/local/nginx/conf/sites-available/${cdn_domain}.conf https://raw.githubusercontent.com/zxcvos/Xray-script/main/nginx/conf/sites-available/example.com.conf
+    sed -i '/# h3/,/# h2/{/# h2/!d;}' /usr/local/nginx/conf/sites-available/${cdn_domain}.conf
+    sed -i 's|cloudreve.sock|cdn_xhttp.sock|' /usr/local/nginx/conf/sites-available/${cdn_domain}.conf
+    sed -i "s|example.com|${cdn_domain}|g" /usr/local/nginx/conf/sites-available/${cdn_domain}.conf
+    sed -i 's|# ||g' /usr/local/nginx/conf/modules-enabled/stream.conf
+    sed -i "s|/yourpath|${XHTTP_PATH}|g" /usr/local/nginx/conf/sites-available/${cdn_domain}.conf
+  }
+
+  # 为新域名申请 SSL 证书
+  bash /usr/local/xray-script/ssl.sh -i -d ${reality_domain} || _error '退出安装流程'
+  [[ ${reality_domain} == ${cdn_domain} ]] || {
+    bash /usr/local/xray-script/ssl.sh -i -d ${cdn_domain} || _error '退出安装流程'
+    ln -sf /usr/local/nginx/conf/sites-available/${cdn_domain}.conf /usr/local/nginx/conf/sites-enabled/${cdn_domain}.conf
+  }
+  ln -sf /usr/local/nginx/conf/sites-available/${reality_domain}.conf /usr/local/nginx/conf/sites-enabled/${reality_domain}.conf
+
+  _info "完成 SSL 证书申请，并重启 Nginx"
+  _systemctl restart nginx
+
+  # 更新 config 中 sni 信息
+  jq --arg target "${reality_domain}" '.sni.domain = $target' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
+  jq --arg target "${cdn_domain}" '.sni.cdn = $target' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
+  jq '.sni.status = 1' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
 }
 
 function setup_xray_config() {
@@ -1096,8 +1352,6 @@ function install_xray() {
 }
 
 function purge_xray() {
-  disable_warp
-  disable_cron
   rm -rf /usr/local/xray-script
   _error_detect 'bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ remove --purge'
 }
@@ -1116,7 +1370,7 @@ function restart_xray() {
 
 function view_xray_config() {
   local remote_host=$(curl -fsSL ipv4.icanhazip.com)
-  local port=$(jq -r '.inbounds[1].port' /usr/local/etc/xray/config.json)
+  local port=$(jq -r '.port' /usr/local/xray-script/config.json)
   _warn '请确保使用端口以开放'
   _info "验证端口开放链接: https://tcp.ping.pe/${remote_host}:${port}"
   _info "根据已有配置文件, 随机获取 serverName 和 shortId 自动生成分享链接与二维码"
@@ -1132,6 +1386,15 @@ function view_xray_config() {
     echo ${SHARE_LINK} | qrencode -t ansiutf8
     get_fallback_xhttp_data
     ;;
+  sni)
+    get_sni_data
+    _info "分享链接: ${SHARE_LINK}"
+    echo ${SHARE_LINK} | qrencode -t ansiutf8
+    get_sni_data 'xhttp'
+    _info "分享链接: ${SHARE_LINK}"
+    echo ${SHARE_LINK} | qrencode -t ansiutf8
+    get_sni_data 'xhttp' 'cdn'
+    ;;
   esac
   _info "分享链接: ${SHARE_LINK}"
   echo ${SHARE_LINK} | qrencode -t ansiutf8
@@ -1142,6 +1405,7 @@ function view_xray_traffic() {
   bash /usr/local/xray-script/traffic.sh
 }
 
+# 安装流程
 function installation_processes() {
   _input_tips '请选择操作: '
   read -r choose
@@ -1151,6 +1415,7 @@ function installation_processes() {
   esac
 }
 
+# 装载管理
 function xray_installation_processes() {
   _input_tips '请选择操作: '
   read -r choose
@@ -1163,10 +1428,18 @@ function xray_installation_processes() {
     SPECIFIED_VERSION="${specified_version}"
     INSTALL_OPTION="--version v${SPECIFIED_VERSION##*v}"
     ;;
+  4)
+    local nginx_status=$(jq -r '.sni.status' /usr/local/xray-script/config.json)
+    if [[ ${nginx_status} -eq 1 ]]; then
+      bash /usr/local/xray-script/nginx.sh -u -b
+    fi
+    exit 0
+    ;;
   *) INSTALL_OPTION='' ;;
   esac
 }
 
+# 管理配置
 function config_processes() {
   _input_tips '请选择操作: '
   read -r choose
@@ -1182,22 +1455,23 @@ function config_processes() {
     fi
     xray_config_management
     ;;
-  2)
-    install_docker
-    build_cloudflare_warp
-    enable_warp
-    ;;
+  2) enable_warp ;;
   3) disable_warp ;;
-  4) enable_cron ;;
-  5) disable_cron ;;
-  6) add_rule_warp_ip ;;
-  7) add_rule_warp_domain ;;
-  8) add_rule_block_ip ;;
-  9) add_rule_block_domain ;;
+  4) enable_nginx_cron ;;
+  5) disable_nginx_cron ;;
+  6) enable_cron ;;
+  7) disable_cron ;;
+  8) add_rule_warp_ip ;;
+  9) add_rule_warp_domain ;;
+  10) add_rule_block_ip ;;
+  11) add_rule_block_domain ;;
+  12) change_domain ;;
+  12) reset_cloudreve_data ;;
   *) exit ;;
   esac
 }
 
+# 更新配置
 function xray_config_processes() {
   _input_tips '请选择操作: '
   read -r choose
@@ -1206,6 +1480,7 @@ function xray_config_processes() {
   2) XTLS_CONFIG='vision' ;;
   4) XTLS_CONFIG='trojan' ;;
   5) XTLS_CONFIG='fallback' ;;
+  6) XTLS_CONFIG='sni' ;;
   *) XTLS_CONFIG='xhttp' ;;
   esac
   jq --arg tag "${XTLS_CONFIG}" '.tag = $tag' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
@@ -1215,6 +1490,7 @@ function xray_config_processes() {
   fi
 }
 
+# 入口界面处理
 function main_processes() {
   _input_tips '请选择操作: '
   read -r choose
@@ -1225,6 +1501,9 @@ function main_processes() {
 
   if ! [[ -d /usr/local/xray-script ]]; then
     mkdir -p /usr/local/xray-script
+    wget --no-check-certificate -O /usr/local/xray-script/nginx.sh https://raw.githubusercontent.com/zxcvos/Xray-script/main/nginx.sh
+    wget --no-check-certificate -O /usr/local/xray-script/ssl.sh https://raw.githubusercontent.com/zxcvos/Xray-script/main/ssl.sh
+    wget --no-check-certificate -q -O /usr/local/xray-script/docker.sh https://raw.githubusercontent.com/zxcvos/Xray-script/main/docker.sh
     wget --no-check-certificate -q -O /usr/local/xray-script/config.json https://raw.githubusercontent.com/zxcvos/Xray-script/refs/heads/main/XTLS/config.json
     wget --no-check-certificate -q -O /usr/local/xray-script/serverNames.json https://raw.githubusercontent.com/zxcvos/Xray-script/refs/heads/main/XTLS/serverNames.json
   fi
@@ -1247,8 +1526,18 @@ function main_processes() {
     install_xray
     ;;
   3)
+    # 停止定期任务
     disable_cron
+    disable_nginx_cron
+    # 关闭 WARP 与 Cloudreve 服务
     disable_warp
+    bash /usr/local/xray-script/docker.sh --purge-cloudreve
+    # 停止续订证书，并卸载 acme.sh
+    stop_renew_ssl
+    bash /usr/local/xray-script/ssl.sh -p
+    # 卸载 nginx
+    bash /usr/local/xray-script/nginx.sh -p
+    # 卸载 xray
     purge_xray
     ;;
   4) start_xray ;;
@@ -1319,10 +1608,12 @@ function xray_installation_management() {
   echo -e "${GREEN}1.${NC} 最新本"
   echo -e "${GREEN}2.${NC} 稳定本(${GREEN}默认${NC})"
   echo -e "${GREEN}3.${NC} 自选版"
+  echo -e "${GREEN}4.${NC} 更新 nginx"
   echo -e "-------------------------------------------"
   echo -e "1.最新版包含了 ${YELLOW}pre-release${NC} 版本"
   echo -e "2.稳定版为最新发布的${YELLOW}非 pre-release${NC} 版本"
   echo -e "3.自选版可能存在${RED}配置不兼容${NC}问题，请自行解决"
+  echo -e "4.更新 nginx 选项，${RED}仅限 SNI 配置使用${NC}"
   echo -e "-------------------------------------------"
   xray_installation_processes
 }
@@ -1330,25 +1621,32 @@ function xray_installation_management() {
 function config_management() {
   clear
   echo -e "----------------- 管理配置 ----------------"
-  echo -e "${GREEN}1.${NC} 更新配置"
-  echo -e "${GREEN}2.${NC} 开启 WARP Proxy"
-  echo -e "${GREEN}3.${NC} 关闭 WARP Proxy"
-  echo -e "${GREEN}4.${NC} 开启 geodata 自动更新"
-  echo -e "${GREEN}5.${NC} 关闭 geodata 自动更新"
-  echo -e "${GREEN}6.${NC} 添加 WARP ip 分流"
-  echo -e "${GREEN}7.${NC} 添加 WARP domain 分流"
-  echo -e "${GREEN}8.${NC} 添加屏蔽 ip 分流"
-  echo -e "${GREEN}9.${NC} 添加屏蔽 domain 分流"
+  echo -e "${GREEN} 1.${NC} 更新配置"
+  echo -e "${GREEN} 2.${NC} 开启 WARP Proxy"
+  echo -e "${GREEN} 3.${NC} 关闭 WARP Proxy"
+  echo -e "${GREEN} 4.${NC} 开启 nginx 自动更新"
+  echo -e "${GREEN} 5.${NC} 关闭 nginx 自动更新"
+  echo -e "${GREEN} 6.${NC} 开启 geodata 自动更新"
+  echo -e "${GREEN} 7.${NC} 关闭 geodata 自动更新"
+  echo -e "${GREEN} 8.${NC} 添加 WARP ip 分流"
+  echo -e "${GREEN} 9.${NC} 添加 WARP domain 分流"
+  echo -e "${GREEN}10.${NC} 添加屏蔽 ip 分流"
+  echo -e "${GREEN}11.${NC} 添加屏蔽 domain 分流"
+  echo -e "${GREEN}12.${NC} 修改域名"
+  echo -e "${GREEN}13.${NC} 重置 Cloudreve 管理员数据"
   echo -e "-------------------------------------------"
   echo -e "1.更新配置功能为整个配置的更新, 如果想要单独修改自行修改配置文件"
   echo -e "2-3.WARP Proxy 功能通过 Docker 部署, 开启时自动安装 Docker"
   echo -e "2-3.WARP Proxy 详情 https://github.com/haoel/haoel.github.io?tab=readme-ov-file#1043-docker-%E4%BB%A3%E7%90%86"
   echo -e "2-3.每次成功开启 WARP Proxy 都会重新申请 WARP 账号, ${RED}频繁操作可能导致 IP 被 Cloud­flare 拉黑${NC}"
-  echo -e "4-5.geodata 由 https://github.com/Loyalsoldier/v2ray-rules-dat 提供"
-  echo -e "6.(${RED}需要开启 WARP${NC})添加关于 ip 的 WARP 分流, 相关分流添加在 ruleTag 为 warp-ip 中"
-  echo -e "7.(${RED}需要开启 WARP${NC})添加关于 domain 的 WARP 分流, 相关分流添加在 ruleTag 为 warp-domain 中"
-  echo -e "8.添加关于 ip 的屏蔽分流, 相关分流添加在 ruleTag 为 block-ip 中"
-  echo -e "9.添加关于 domain 的屏蔽分流, 相关分流添加在 ruleTag 为 block-domain 中"
+  echo -e "4-5.开启/关闭 nginx 自动更新，${RED}仅限 SNI 配置使用${NC}"
+  echo -e "6-7.geodata 由 https://github.com/Loyalsoldier/v2ray-rules-dat 提供"
+  echo -e "8.(${RED}需要开启 WARP${NC})添加关于 ip 的 WARP 分流, 相关分流添加在 ruleTag 为 warp-ip 中"
+  echo -e "9.(${RED}需要开启 WARP${NC})添加关于 domain 的 WARP 分流, 相关分流添加在 ruleTag 为 warp-domain 中"
+  echo -e "10.添加关于 ip 的屏蔽分流, 相关分流添加在 ruleTag 为 block-ip 中"
+  echo -e "11.添加关于 domain 的屏蔽分流, 相关分流添加在 ruleTag 为 block-domain 中"
+  echo -e "12.修改通过 SNI 分流的域名，${RED}仅限 SNI 配置使用${NC}"
+  echo -e "13.重置 Cloudreve 数据库，${RED}仅限 SNI 配置使用${NC}"
   echo -e "-------------------------------------------"
   config_processes
 }
@@ -1361,6 +1659,7 @@ function xray_config_management() {
   echo -e "${GREEN}3.${NC} VLESS+XHTTP+REALITY(${GREEN}默认${NC})"
   echo -e "${GREEN}4.${NC} Trojan+XHTTP+REALITY"
   echo -e "${GREEN}5.${NC} VLESS+Vision+REALITY+VLESS+XHTTP+REALITY"
+  echo -e "${GREEN}6.${NC} SNI+VLESS+Vision+REALITY+VLESS+XHTTP+REALITY"
   echo -e "-------------------------------------------"
   echo -e "1.mKCP ${YELLOW}牺牲带宽${NC}来${GREEN}降低延迟${NC}。传输同样的内容，${RED}mKCP 一般比 TCP 消耗更多的流量${NC}"
   echo -e "2.XTLS(Vision) ${GREEN}解决 TLS in TLS 问题${NC}"
@@ -1369,6 +1668,7 @@ function xray_config_management() {
   echo -e "3.2.${RED}此外 v2rayN&G 客户端有全局 mux.cool 设置，用 XHTTP 前记得关闭，不然连不上新版 Xray 服务端${NC}"
   echo -e "4.VLESS 替换为 Trojan"
   echo -e "5.利用 VLESS+Vision+REALITY 回落 VLESS+XHTTP ${GREEN}共用 443 端口${NC}"
+  echo -e "6.通过 Nginx 的 SNI 分流${GREEN}共用 443 端口${NC}，实现 REALITY 直连与过 CDN 共存"
   echo -e "-------------------------------------------"
   xray_config_processes
 }
