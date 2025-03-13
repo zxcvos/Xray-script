@@ -97,7 +97,9 @@ http {
 EOF
 
   # 确保 Nginx 正在运行
-  if ! systemctl is-active --quiet nginx; then
+  if systemctl is-active --quiet nginx; then
+    nginx -t && systemctl reload nginx || print_error "Nginx 启动失败，请检查配置文件。"
+  else
     nginx -t && systemctl start nginx || print_error "Nginx 启动失败，请检查配置文件。"
   fi
 
