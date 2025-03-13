@@ -16,13 +16,14 @@ readonly YELLOW='\033[1;31;33m'
 readonly NC='\033[0m'
 
 # 可选参数正则表达式
-readonly OP_REGEX='(^--(help|update|purge|issue|(stop-)?renew|check-cron|info|www|domain|nginx|webroot|tls)$)|(^-[upirscdnwt]$)'
+readonly OP_REGEX='(^--(help|update|purge|issue|(stop-)?renew|check-cron|info|www|domain|email|nginx|webroot|tls)$)|(^-[upirscdenwt]$)'
 
 # 用户操作
 declare action=''
 
 # 可选值
 declare -a domains=()
+declare account_email=''
 declare nginx_config_path=''
 declare acme_webroot_path=''
 declare ssl_cert_path=''
@@ -43,10 +44,11 @@ function print_error() {
 
 # 安装 acme.sh
 function install_acme_sh() {
+  [[ -e "${HOME}/.acme.sh/acme.sh" ]] && exit 0
   print_info "正在安装 acme.sh..."
-  curl https://get.acme.sh | sh || print_error "acme.sh 安装失败。"
+  curl https://get.acme.sh | sh -s email=${account_email} || print_error "acme.sh 安装失败。"
   "${HOME}/.acme.sh/acme.sh" --upgrade --auto-upgrade || print_error "acme.sh 自动升级设置失败。"
-  "${HOME}/.acme.sh/acme.sh" --set-default-ca --server letsencrypt || print_error "设置默认 CA 失败。"
+  "${HOME}/.acme.sh/acme.sh" --set-default-ca --server zerossl || print_error "设置默认 CA 失败。"
 }
 
 # 更新 acme.sh
@@ -68,8 +70,8 @@ function issue_certificate() {
   print_info "正在签发 SSL 证书..."
 
   # 创建必要的目录
-  [[ -d "${acme_webroot_path}" ]] || mkdir -p "${acme_webroot_path}" || print_error "无法创建 ACME 验证目录: ${acme_webroot_path}"
-  [[ -d "${ssl_cert_path}" ]] || mkdir -p "${ssl_cert_path}" || print_error "无法创建 SSL 证书目录: ${ssl_cert_path}"
+  [[ -d "${acme_webroot_path}" ]] || mkdir -vp "${acme_webroot_path}" || print_error "无法创建 ACME 验证目录: ${acme_webroot_path}"
+  [[ -d "${ssl_cert_path}" ]] || mkdir -vp "${ssl_cert_path}" || print_error "无法创建 SSL 证书目录: ${ssl_cert_path}"
 
   # 备份原始配置
   mv -f /usr/local/nginx/conf/nginx.conf /usr/local/nginx/conf/nginx.conf.bak
@@ -90,7 +92,7 @@ http {
     server {
         listen       80;
         location ^~ /.well-known/acme-challenge/ {
-            root /var/www/_letsencrypt;
+            root /var/www/_zerossl;
         }
     }
 }
@@ -108,7 +110,7 @@ EOF
     --webroot "${acme_webroot_path}" \
     --keylength ec-256 \
     --accountkeylength ec-256 \
-    --server letsencrypt \
+    --server zerossl \
     --ocsp
 
   if [[ $? -ne 0 ]]; then
@@ -117,7 +119,7 @@ EOF
       --webroot "${acme_webroot_path}" \
       --keylength ec-256 \
       --accountkeylength ec-256 \
-      --server letsencrypt \
+      --server zerossl \
       --ocsp \
       --debug
     # 恢复原始配置
@@ -129,7 +131,7 @@ EOF
   mv -f /usr/local/nginx/conf/nginx.conf.bak /usr/local/nginx/conf/nginx.conf
 
   # 重启 nginx
-  systemctl restart nginx || print_error "Nginx 重启失败。"
+  nginx -t && systemctl reload nginx || print_error "Nginx 启动失败，请检查配置文件。"
 
   # 安装证书
   "${HOME}/.acme.sh/acme.sh" --install-cert --ecc $(printf -- " -d %s" "${domains[@]}") \
@@ -165,9 +167,9 @@ function show_certificate_info() {
 # 查询 nginx 配置目录
 function find_nginx_config() {
   if [[ -d /etc/nginx ]]; then
-    nginx_config_path="/etc/nginx"
+    echo "/etc/nginx"
   elif [[ -d /usr/local/nginx/conf ]]; then
-    nginx_config_path="/usr/local/nginx/conf"
+    echo "/usr/local/nginx/conf"
   else
     print_error "未找到 Nginx 配置路径"
   fi
@@ -179,6 +181,7 @@ function show_help() {
 用法: $0 [命令] [选项]
 
 命令:
+  --install           安装 acme.sh
   -u, --update        更新 acme.sh
   -p, --purge         卸载 acme.sh 并删除相关目录
   -i, --issue         签发/更新 SSL 证书
@@ -200,6 +203,9 @@ EOF
 # 参数解析
 while [[ $# -gt 0 ]]; do
   case "$1" in
+  --install)
+    action="install"
+    ;;
   -u | --update)
     action="update"
     ;;
@@ -225,6 +231,11 @@ while [[ $# -gt 0 ]]; do
     shift
     [[ -z "$1" || "$1" =~ ${OP_REGEX} ]] && print_error "未提供有效的域名"
     domains+=("$1")
+    ;;
+  -e | --email)
+    shift
+    [[ -z "$1" || "$1" =~ ${OP_REGEX} ]] && print_error "未提供邮箱"
+    account_email="$1"
     ;;
   -n | --nginx)
     shift
@@ -252,20 +263,22 @@ while [[ $# -gt 0 ]]; do
 done
 
 # 参数验证
-[[ -z "$action" ]] && print_error "未指定操作。使用 --help 了解用法"
+[[ -z ${action} ]] && print_error "未指定操作。使用 --help 了解用法"
 
 # 初始化默认值
 nginx_config_path=${nginx_config_path:-$(find_nginx_config)}
-acme_webroot_path=${acme_webroot_path:-/var/www/_letsencrypt}
+account_email=${account_email:-my@example.com}
+acme_webroot_path=${acme_webroot_path:-/var/www/_zerossl}
 ssl_cert_path=${ssl_cert_path:-${nginx_config_path}/certs/${domains[0]:-default}}
 
 # 检查 acme.sh 是否已安装
-if [[ ! -e "${HOME}/.acme.sh/acme.sh" ]]; then
-  install_acme_sh
+if [[ ! -e "${HOME}/.acme.sh/acme.sh" && 'install' != ${action} ]]; then
+  print_error "请先使用 使用 '$0 --install [--email my@email.com]' 安装 acme.sh"
 fi
 
 # 执行操作
 case "${action}" in
+install) install_acme_sh ;;
 update) update_acme_sh ;;
 purge) purge_acme_sh ;;
 issue) issue_certificate ;;
