@@ -71,6 +71,31 @@ function issue_certificate() {
   [[ -d "${acme_webroot_path}" ]] || mkdir -p "${acme_webroot_path}" || print_error "无法创建 ACME 验证目录: ${acme_webroot_path}"
   [[ -d "${ssl_cert_path}" ]] || mkdir -p "${ssl_cert_path}" || print_error "无法创建 SSL 证书目录: ${ssl_cert_path}"
 
+  # 备份原始配置
+  mv -f /usr/local/nginx/conf/nginx.conf /usr/local/nginx/conf/nginx.conf.bak
+
+  # 创建申请证书专用配置
+  cat >/usr/local/nginx/conf/nginx.conf <<EOF
+user                 root;
+pid                  /run/nginx.pid;
+worker_processes     1;
+events {
+    worker_connections  1024;
+}
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+    sendfile        on;
+    keepalive_timeout  65;
+    server {
+        listen       80;
+        location ^~ /.well-known/acme-challenge/ {
+            root /var/www/_letsencrypt;
+        }
+    }
+}
+EOF
+
   # 确保 Nginx 正在运行
   if ! systemctl is-active --quiet nginx; then
     nginx -t && systemctl start nginx || print_error "Nginx 启动失败，请检查配置文件。"
@@ -93,11 +118,16 @@ function issue_certificate() {
       --server letsencrypt \
       --ocsp \
       --debug
+    # 恢复原始配置
+    mv -f /usr/local/nginx/conf/nginx.conf.bak /usr/local/nginx/conf/nginx.conf
     print_error "ECC 证书申请失败。"
   fi
 
-  # 配置重载
-  nginx -t && systemctl reload nginx || print_error "Nginx 配置测试或重载失败。"
+  # 恢复原始配置
+  mv -f /usr/local/nginx/conf/nginx.conf.bak /usr/local/nginx/conf/nginx.conf
+
+  # 重启 nginx
+  systemctl restart nginx || print_error "Nginx 重启失败。"
 
   # 安装证书
   "${HOME}/.acme.sh/acme.sh" --install-cert --ecc $(printf -- " -d %s" "${domains[@]}") \
