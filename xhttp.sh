@@ -1494,6 +1494,8 @@ function main_processes() {
   _input_tips '请选择操作: '
   read -r choose
 
+  [[ ${choose} -eq 0 ]] && exit 0
+
   if ! check_dependencies; then
     install_dependencies
   fi
@@ -1553,7 +1555,7 @@ function main_processes() {
       restart_xray
     fi
     ;;
-  *) exit ;;
+  *) exit 0;;
   esac
 }
 
