@@ -289,6 +289,7 @@ function download_github_files() {
 }
 
 function check_xray_script_version() {
+  _exists "jq" || _install jq
   local url="https://api.github.com/repos/zxcvos/Xray-script/contents"
   local local_size=$(stat -c %s "${CUR_DIR}/${CUR_FILE}")
   local remote_size=$(curl -fsSL "$url" | jq -r '.[] | select(.name == "xhttp.sh") | .size')
