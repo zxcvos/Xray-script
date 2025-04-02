@@ -1555,7 +1555,7 @@ function main_processes() {
       restart_xray
     fi
     ;;
-  *) exit 0;;
+  *) exit 0 ;;
   esac
 }
 
