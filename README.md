@@ -128,7 +128,7 @@ WARP Proxy : 已启动
 | Platform | Version    |
 | -------- | ---------- |
 | Debian   | 10, 11, 12 |
-| Ubuntu   | 20, 22, 23 |
+| Ubuntu   | 20, 22, 24 |
 | CentOS   | 7, 8, 9    |
 | Rocky    | 8, 9       |
 
