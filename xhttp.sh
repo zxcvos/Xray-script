@@ -1481,6 +1481,12 @@ function view_xray_config() {
   _warn '请确保使用端口以开放'
   _info "验证端口开放链接: https://tcp.ping.pe/${remote_host}:${port}"
   _info "根据已有配置文件, 随机获取 serverName 和 shortId 自动生成分享链接与二维码"
+  _info "分享链接基于 【VMessAEAD / VLESS 分享链接标准提案】与 【v2rayN/NG 分享服务器】实现，如果其他客户端无法正常使用，请自行根据分享链接进行修改。"
+  _info "上下行分离二维码太大，不予显示。"
+  echo
+  echo '按任意键继续......或按 Ctrl+C 取消'
+  local char=$(get_char)
+  echo
   XTLS_CONFIG=$(jq -r '.tag' /usr/local/xray-script/config.json)
   case ${XTLS_CONFIG} in
   mkcp) get_mkcp_data ;;
@@ -1488,23 +1494,47 @@ function view_xray_config() {
   xhttp) get_xhttp_data ;;
   trojan) get_trojan_data ;;
   fallback)
+    # vision
     get_vision_data
+    _info "XTLS(Vision)+Reality 直连"
     _info "分享链接: ${SHARE_LINK}"
     echo ${SHARE_LINK} | qrencode -t ansiutf8
+    echo
+    # xhttp
     get_fallback_xhttp_data
+    _info "xhttp+Reality 直连"
     ;;
   sni)
+    # vision
     get_sni_data
+    _info "XTLS(Vision)+Reality 直连"
     _info "分享链接: ${SHARE_LINK}"
     echo ${SHARE_LINK} | qrencode -t ansiutf8
+    echo
+    # xhttp
     get_sni_data 'xhttp'
+    _info "xhttp+Reality 直连"
     _info "分享链接: ${SHARE_LINK}"
     echo ${SHARE_LINK} | qrencode -t ansiutf8
+    echo
+    # reality up cdn down
+    get_sni_data 'xhttp' 'reality' 'extra'
+    _info "上行 xhttp+Reality | 下行 xhttp+TLS+CDN"
+    _info "分享链接: ${SHARE_LINK}"
+    echo
+    # cdn up reality down
+    get_sni_data 'xhttp' 'cdn' 'extra'
+    _info "上行 xhttp+TLS+CDN | 下行 xhttp+Reality"
+    _info "分享链接: ${SHARE_LINK}"
+    echo
+    # cdn
     get_sni_data 'xhttp' 'cdn'
+    _info "xhttp+TLS 过 CDN"
     ;;
   esac
   _info "分享链接: ${SHARE_LINK}"
   echo ${SHARE_LINK} | qrencode -t ansiutf8
+  echo
 }
 
 function view_xray_traffic() {
