@@ -1,4 +1,5 @@
 <!-- Translated by AI -->
+<a href="README.md">中文</a> | English
 # Xray-XHTTP Management Script :sparkles:
 
 * A pure Shell-written XHTTP management script for Xray
