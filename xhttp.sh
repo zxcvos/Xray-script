@@ -1265,6 +1265,39 @@ function get_sni_data() {
   [[ 'cdn' == "${sni_security}" ]] && SHARE_LINK="${protocol}://${uuid}@${remote_host}:${port}?type=${type}&security=${security}&sni=${server_name}&host=${server_name}&alpn=h2&pbk=${public_key}&path=%2F${path#/}&spx=%2F&fp=chrome#${tag}"
 }
 
+function get_sni_extra_encoded() {
+  local sni_path="$1"
+  local sni_security="$2"
+  local server_name=$(jq -r '.sni.domain' /usr/local/xray-script/config.json)
+  [[ 'cdn' == "${sni_security}" ]] || server_name=$(jq -r '.sni.cdn' /usr/local/xray-script/config.json)
+  local encoded=$(
+    cat <<EOF | urlencode
+{
+    "downloadSettings": {
+        "address": "${server_name}",
+        "port": 443,
+        "network": "xhttp",
+        "security": "tls",
+        "tlsSettings": {
+            "serverName": "${server_name}",
+            "allowInsecure": false,
+            "alpn": [
+                "h2"
+            ],
+            "fingerprint": "chrome"
+        },
+        "xhttpSettings": {
+            "host": "${server_name}",
+            "path": "${sni_path}",
+            "mode": "auto"
+        }
+    }
+}
+EOF
+  )
+  echo "$encoded"
+}
+
 function set_routing_and_outbounds() {
   if [[ "${STATUS}" -eq 1 ]]; then
     local routing=$(jq -r '.' /usr/local/xray-script/routing.json)
