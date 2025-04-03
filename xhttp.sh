@@ -1268,8 +1268,7 @@ function get_sni_data() {
 function get_sni_extra_encoded() {
   local sni_path="$1"
   local sni_security="$2"
-  local server_name=$(jq -r '.sni.domain' /usr/local/xray-script/config.json)
-  [[ 'cdn' == "${sni_security}" ]] || server_name=$(jq -r '.sni.cdn' /usr/local/xray-script/config.json)
+  local server_name=$(jq -r '.sni.cdn' /usr/local/xray-script/config.json)
   local encoded=$(
     cat <<EOF | urlencode
 {
@@ -1295,6 +1294,40 @@ function get_sni_extra_encoded() {
 }
 EOF
   )
+  if [[ 'cdn' == "${sni_security}" ]]; then
+    server_name=$(jq -r '.sni.domain' /usr/local/xray-script/config.json)
+    # -- public_key --
+    local public_key=$(jq -r '.publicKey' /usr/local/xray-script/config.json)
+    # -- shortId --
+    local short_ids_length=$(jq -r '.inbounds[1].streamSettings.realitySettings.shortIds | length' /usr/local/etc/xray/config.json)
+    local short_ids_random=$(get_random_number 0 ${short_ids_length})
+    local short_id=$(jq '.inbounds[1].streamSettings.realitySettings.shortIds | .[]' /usr/local/etc/xray/config.json | shuf | jq -s -r --argjson i ${short_ids_random} '.[$i]')
+    encoded=$(
+      cat <<EOF | urlencode
+{
+    "downloadSettings": {
+        "address": "${server_name}",
+        "port": 443,
+        "network": "xhttp",
+        "security": "reality",
+        "realitySettings": {
+            "show": false,
+            "serverName": "${server_name}",
+            "fingerprint": "chrome",
+            "publicKey": "${public_key}",
+            "shortId": "${short_id}",
+            "spiderX": "/"
+        },
+        "xhttpSettings": {
+            "host": "",
+            "path": "${sni_path}",
+            "mode": "auto"
+        }
+    }
+}
+EOF
+    )
+  fi
   echo "$encoded"
 }
 
