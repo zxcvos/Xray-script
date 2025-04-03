@@ -1,3 +1,4 @@
+中文 | <a href="README.en.md">English</a>
 # Xray-XHTTP 管理脚本 :sparkles:
 
 * 一个纯 Shell 编写的 XHTTP 管理脚本
