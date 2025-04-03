@@ -2,13 +2,14 @@
 
 * 一个纯 Shell 编写的 XHTTP 管理脚本
 * 可选配置:
-  * VLESS-mKCP
-  * VLESS-Vision-REALITY
-  * VLESS-XHTTP-REALITY
-  * Trojan-XHTTP-REALITY
-  * VLESS-Vision-REALITY (fallback: VLESS-XHTTP-REALITY)
+  * mKCP (VLESS-mKCP-seed)
+  * Vision (VLESS-Vision-REALITY)
+  * XHTTP (VLESS-XHTTP-REALITY)
+  * trojan (Trojan-XHTTP-REALITY)
+  * Fallback (包含 VLESS-Vision-REALITY、VLESS-XHTTP-REALITY)
   * SNI (包含 Vision_REALITY、XHTTP_REALITY、XHTTP_TLS)
 * SNI 配置由 Nginx 实现 SNI 分流，适合过 CDN、上下行分离、多网站共存等需求
+* SNI 分享链接实现了上下行分离(上行 xhttp+TLS+CDN | 下行 xhttp+Reality、上行 xhttp+Reality | 下行 xhttp+TLS+CDN)
 * 规则配置与自填:
   * 禁止 bittorrent 流量(可选)
   * 禁止回国 ip 流量(可选)
@@ -32,7 +33,7 @@
   * 实现自填 target 的 TLSv1.3 与 H2 验证
   * 实现自填 target 的 serverNames 自动获取
 * shortId 默认与自填:
-  * 随机生成(默认两个: 01234567, 0123456789abcdef)
+  * 随机生成(默认两个 shortId 例如: 01234567, 0123456789abcdef)
   * 实现自填 shortId
   * 实现输入值为 0 到 8, 则自动生成对 0-16 长度的 shortId
   * 支持逗号分隔的多个值
@@ -44,7 +45,8 @@
 
 1. 如果安装成功，但无法使用，请检查服务器是否开启对应端口。
 2. 使用 SNI 配置前，请确保 VPS 的 HTTP(80) 与 HTTPS(443) 端口开放。
-3. 上下行分离请看 [xhttp 五合一配置][xhttp 五合一配置] 了解
+3. 使用 SNI 配置前，请不要开启 CDN 保护，不然无法正常申请 SSL 证书。
+4. 上下行分离详情请看 [XHTTP: Beyond REALITY][XHTTP] 与 [xhttp 五合一配置][xhttp 五合一配置] 了解。
 
 可通过 `https://tcp.ping.pe/ip:port` 验证服务器端口是否开放。
 
@@ -111,18 +113,6 @@ WARP Proxy : 已启动
 0. 退出
 ```
 
-## 安装位置
-
-**Xray-script:** `/usr/local/xray-script`
-
-**Nginx:** `/usr/local/nginx`
-
-**Cloudreve:** `/usr/local/cloudreve`
-
-**Cloudflare-warp:** `/usr/local/cloudflare_warp`
-
-**Xray:** 见 **[Xray-install](https://github.com/XTLS/Xray-install)**
-
 ## 已测试系统
 
 | Platform | Version    |
@@ -172,6 +162,18 @@ SNI 配置适合安装一次后长期使用，不适合反复重置系统安装�
 2. 软件版本新
 
 缺点就是编译耗时长。
+
+## 安装位置
+
+**Xray-script:** `/usr/local/xray-script`
+
+**Nginx:** `/usr/local/nginx`
+
+**Cloudreve:** `/usr/local/cloudreve`
+
+**Cloudflare-warp:** `/usr/local/cloudflare_warp`
+
+**Xray:** 见 **[Xray-install](https://github.com/XTLS/Xray-install)**
 
 ## 依赖列表
 
