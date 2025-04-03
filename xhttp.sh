@@ -1225,6 +1225,7 @@ function set_sni_data() {
 function get_sni_data() {
   local sni_type="$1"
   local sni_security="$2"
+  local extra="$3"
   # -- protocol --
   local protocol=$(jq -r '.inbounds[1].protocol' /usr/local/etc/xray/config.json)
   # -- uuid --
@@ -1263,6 +1264,11 @@ function get_sni_data() {
   SHARE_LINK="${protocol}://${uuid}@${remote_host}:${port}?type=${type}&flow=${flow}&security=${security}&sni=${server_name}&pbk=${public_key}&sid=${short_id}&spx=%2F&fp=chrome#${tag}"
   [[ 'xhttp' == "${sni_type}" ]] && SHARE_LINK="${protocol}://${uuid}@${remote_host}:${port}?type=${type}&security=${security}&sni=${server_name}&pbk=${public_key}&sid=${short_id}&path=%2F${path#/}&spx=%2F&fp=chrome#${tag}"
   [[ 'cdn' == "${sni_security}" ]] && SHARE_LINK="${protocol}://${uuid}@${remote_host}:${port}?type=${type}&security=${security}&sni=${server_name}&host=${server_name}&alpn=h2&pbk=${public_key}&path=%2F${path#/}&spx=%2F&fp=chrome#${tag}"
+  if [[ 'extra' == "${extra}" ]]; then
+    extra_encoded=$(get_sni_extra_encoded ${path} ${sni_security})
+    SHARE_LINK="${protocol}://${uuid}@${remote_host}:${port}?type=${type}&security=${security}&sni=${server_name}&pbk=${public_key}&sid=${short_id}&path=%2F${path#/}&spx=%2F&fp=chrome&extra=${extra_encoded}#reality_up_cdn_down"
+    [[ 'cdn' == "${sni_security}" ]] && SHARE_LINK="${protocol}://${uuid}@${remote_host}:${port}?type=${type}&security=${security}&sni=${server_name}&host=${server_name}&alpn=h2&pbk=${public_key}&path=%2F${path#/}&spx=%2F&fp=chrome&extra=${extra_encoded}#cdn_up_reality_down"
+  fi
 }
 
 function get_sni_extra_encoded() {
