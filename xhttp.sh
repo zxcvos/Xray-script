@@ -288,6 +288,59 @@ function download_github_files() {
   echo "Github 文件已下载到 ${conf_dir}"
 }
 
+function check_xray_script_dependencies() {
+  local -a dependencies=(
+    "ssl.sh|https://api.github.com/repos/zxcvos/Xray-script/contents/ssl.sh"
+    "nginx.sh|https://api.github.com/repos/zxcvos/Xray-script/contents/nginx.sh"
+    "docker.sh|https://api.github.com/repos/zxcvos/Xray-script/contents/docker.sh"
+  )
+
+  local updated=false
+  local target_dir="/usr/local/xray-script"
+
+  # 初次使用时，目录不存在，跳过更新检查
+  if [[ ! -d "$target_dir" ]]; then
+    return
+  fi
+
+  for dep in "${dependencies[@]}"; do
+    IFS='|' read -r filename api_url <<<"$dep"
+    local local_file="${target_dir}/${filename}"
+    local tmp_file="${local_file}.tmp"
+
+    # 获取远程文件大小
+    local remote_size
+    if ! remote_size=$(curl -fsSL "$api_url" | jq -r '.size'); then
+      _info "获取 ${filename} 元数据失败，跳过更新检查"
+      continue
+    fi
+
+    # 获取本地文件大小
+    local local_size
+    if ! local_size=$(stat -c %s "$local_file" 2>/dev/null); then
+      _info "无法获取 ${filename} 本地大小，尝试重新下载"
+      local_size=0
+    fi
+
+    # 比较文件大小
+    if [[ "$remote_size" != "$local_size" ]]; then
+      _info "发现脚本依赖 ${filename} 有更新"
+      if wget -q --show-progress -O "$tmp_file" "https://raw.githubusercontent.com/zxcvos/Xray-script/main/${filename}"; then
+        mv "$tmp_file" "$local_file"
+        updated=true
+      else
+        _info "下载 ${filename} 失败，保留原版本"
+        rm -f "$tmp_file"
+      fi
+    fi
+  done
+
+  if $updated; then
+    _info '已自动更新相关依赖'
+    sleep 2
+  fi
+}
+
 function check_xray_script_version() {
   local url="https://api.github.com/repos/zxcvos/Xray-script/contents/xhttp.sh"
   local local_size=$(stat -c %s "${CUR_DIR}/${CUR_FILE}")
@@ -1839,6 +1892,7 @@ function xray_config_management() {
 
 function main() {
   check_os
+  check_xray_script_dependencies
   check_xray_script_version
   clear
   print_banner
