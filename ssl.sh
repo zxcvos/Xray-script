@@ -150,6 +150,8 @@ function renew_certificates() {
 function stop_renew_certificates() {
   print_info "正在停止续期指定的 SSL 证书..."
   "${HOME}/.acme.sh/acme.sh" --remove $(printf -- " -d %s" "${domains[@]}") --ecc || print_error "停止续期失败。"
+  rm -rf $(printf -- " ${HOME}/.acme.sh/%s_ecc" "${domains[@]}")
+  rm -rf $(printf -- " ${nginx_config_path}/certs/%s" "${domains[@]}")
 }
 
 # 检查定时任务
