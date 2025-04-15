@@ -289,19 +289,44 @@ function download_github_files() {
 }
 
 function check_xray_script_version() {
-  local url="https://api.github.com/repos/zxcvos/Xray-script/contents"
+  local url="https://api.github.com/repos/zxcvos/Xray-script/contents/xhttp.sh"
   local local_size=$(stat -c %s "${CUR_DIR}/${CUR_FILE}")
-  if ! curl -fsSL "$url" | grep -q ${local_size}; then
+  local remote_size=$(curl -fsSL "$url" | jq -r '.size')
+
+  if [[ "${local_size}" != "${remote_size}" ]]; then
     _info '发现有新脚本, 是否更新'
-    _input_tips '退出脚本并显示更新命令 [Y/n] '
+    _input_tips '是否更新 [Y/n] '
     read -r is_update_script
-    case ${is_update_script} in
-    N | n)
+
+    case "${is_update_script,,}" in
+    n)
       _warn '请及时更新脚本'
       sleep 2
       ;;
     *)
-      echo 'wget --no-check-certificate -O ${HOME}/Xray-script.sh https://raw.githubusercontent.com/zxcvos/Xray-script/main/xhttp.sh && bash ${HOME}/Xray-script.sh'
+      _info "正在下载新版脚本..."
+
+      # 创建临时文件
+      local tmp_script=$(mktemp)
+
+      # 下载新脚本并检查是否成功
+      if ! wget --no-check-certificate -O "$tmp_script" "https://raw.githubusercontent.com/zxcvos/Xray-script/main/xhttp.sh"; then
+        rm -rf "${tmp_script}"
+        _warn "新脚本下载失败，请手动更新脚本"
+        _warn "echo 'wget --no-check-certificate -O ${HOME}/Xray-script.sh https://raw.githubusercontent.com/zxcvos/Xray-script/main/xhttp.sh && bash ${HOME}/Xray-script.sh'"
+        exit 1
+      fi
+
+      # 替换当前脚本
+      mv -f "${tmp_script}" "${CUR_DIR}/${CUR_FILE}"
+      chmod +x "${CUR_DIR}/${CUR_FILE}"
+
+      _info "脚本已更新，正在重新运行..."
+
+      # 重新执行新脚本并传递原始参数
+      exec bash "${CUR_DIR}/${CUR_FILE}" "$@"
+
+      # 确保退出当前进程
       exit 0
       ;;
     esac
