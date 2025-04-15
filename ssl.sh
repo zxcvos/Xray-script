@@ -62,7 +62,7 @@ function purge_acme_sh() {
   print_info "正在卸载 acme.sh..."
   "${HOME}/.acme.sh/acme.sh" --upgrade --auto-upgrade 0 || print_error "禁用 acme.sh 自动升级失败。"
   "${HOME}/.acme.sh/acme.sh" --uninstall || print_error "acme.sh 卸载失败。"
-  rm -rf "${HOME}/.acme.sh" "${acme_webroot_path}" "${ssl_cert_path}"
+  rm -rf "${HOME}/.acme.sh" "${acme_webroot_path}" "${nginx_config_path}/certs"
 }
 
 # 签发证书
