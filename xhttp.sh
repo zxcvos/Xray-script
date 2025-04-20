@@ -342,6 +342,7 @@ function check_xray_script_dependencies() {
 }
 
 function check_xray_script_version() {
+  [[ -d /usr/local/xray-script ]] || return
   local url="https://api.github.com/repos/zxcvos/Xray-script/contents/xhttp.sh"
   local local_size=$(stat -c %s "${CUR_DIR}/${CUR_FILE}")
   local remote_size=$(curl -fsSL "$url" | jq -r '.size')
