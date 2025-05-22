@@ -49,6 +49,9 @@ declare IS_AUTO=''
 # update config
 declare UPDATE_CONFIG=''
 
+# sni config
+declare SNI_CONFIG=''
+
 # xtls config
 declare XTLS_CONFIG='xhttp'
 
@@ -573,6 +576,9 @@ function show_cloudreve_data() {
   local cloudreve_version=$(jq -r '.cloudreve.version' /usr/local/xray-script/config.json)
   local cloudreve_username=$(jq -r '.cloudreve.username' /usr/local/xray-script/config.json)
   local cloudreve_password=$(jq -r '.cloudreve.password' /usr/local/xray-script/config.json)
+  if [[ -z "${cloudreve_version}" ]]; then
+    return
+  fi
   echo "Cloudreve 版本: ${cloudreve_version}"
   echo "Cloudreve 账号: ${cloudreve_username}"
   echo "Cloudreve 密码: ${cloudreve_password}"
@@ -1448,7 +1454,9 @@ function setup_xray_config_data() {
   add_update_geodata
   [[ 'sni' == ${XTLS_CONFIG} ]] && {
     bash /usr/local/xray-script/ssl.sh --install --email "${account_email:-my@example.com}"
-    bash /usr/local/xray-script/docker.sh --install-cloudreve
+    if [[ 'cloudreve' == ${SNI_CONFIG} ]]; then
+      bash /usr/local/xray-script/docker.sh --install-cloudreve
+    fi
     setup_nginx
     setup_nginx_config_data
     setup_ssl
@@ -1509,6 +1517,11 @@ function setup_ssl() {
     sed -i "s|example.com|${cdn_domain}|g" /usr/local/nginx/conf/sites-available/${cdn_domain}.conf
     sed -i 's|# ||g' /usr/local/nginx/conf/modules-enabled/stream.conf
     sed -i "s|/yourpath|${XHTTP_PATH}|g" /usr/local/nginx/conf/sites-available/${cdn_domain}.conf
+  }
+
+  [[ 'cloudreve' == ${SNI_CONFIG} ]] || {
+    sed -i '/^[[:space:]]*location \//,/^}[[:space:]]*$/ { s/^/#/; }' /usr/local/nginx/conf/sites-available/${reality_domain}.conf
+    sed -i '/^[[:space:]]*location \//,/^}[[:space:]]*$/ { s/^/#/; }' /usr/local/nginx/conf/sites-available/${cdn_domain}.conf
   }
 
   # 为新域名申请 SSL 证书
@@ -1687,6 +1700,15 @@ function config_processes() {
   esac
 }
 
+# SNI配置
+function sni_config_processes() {
+  _input_tips '请选择操作: '
+  read -r choose
+  case ${choose} in
+  2) SNI_CONFIG='cloudreve' ;;
+  esac
+}
+
 # 更新配置
 function xray_config_processes() {
   _input_tips '请选择操作: '
@@ -1696,7 +1718,10 @@ function xray_config_processes() {
   2) XTLS_CONFIG='vision' ;;
   4) XTLS_CONFIG='trojan' ;;
   5) XTLS_CONFIG='fallback' ;;
-  6) XTLS_CONFIG='sni' ;;
+  6)
+    XTLS_CONFIG='sni'
+    sni_config_management
+    ;;
   *) XTLS_CONFIG='xhttp' ;;
   esac
   jq --arg tag "${XTLS_CONFIG}" '.tag = $tag' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
@@ -1867,6 +1892,18 @@ function config_management() {
   echo -e "13.重置 Cloudreve 数据库，${RED}仅限 SNI 配置使用${NC}"
   echo -e "-------------------------------------------"
   config_processes
+}
+
+function sni_config_management() {
+  clear
+  echo -e "----------------- SNI 配置 ----------------"
+  echo -e "${GREEN}1.${NC} 使用 Nginx 默认页面(${GREEN}默认${NC})"
+  echo -e "${GREEN}2.${NC} 使用 Cloudreve"
+  echo -e "-------------------------------------------"
+  echo -e "1.不配置伪装站，使用默认页面"
+  echo -e "2.使用个人网盘服务进行伪装"
+  echo -e "-------------------------------------------"
+  sni_config_processes
 }
 
 function xray_config_management() {
