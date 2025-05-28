@@ -1695,7 +1695,7 @@ function config_processes() {
   10) add_rule_block_ip ;;
   11) add_rule_block_domain ;;
   12) change_domain ;;
-  12) reset_cloudreve_data ;;
+  13) reset_cloudreve_data ;;
   *) exit ;;
   esac
 }
