@@ -1520,8 +1520,8 @@ function setup_ssl() {
   }
 
   [[ 'cloudreve' == ${SNI_CONFIG} ]] || {
-    sed -i '/^[[:space:]]*location \//,/^}[[:space:]]*$/ { s/^/#/; }' /usr/local/nginx/conf/sites-available/${reality_domain}.conf
-    sed -i '/^[[:space:]]*location \//,/^}[[:space:]]*$/ { s/^/#/; }' /usr/local/nginx/conf/sites-available/${cdn_domain}.conf
+    sed -i '/^[[:space:]]*location \/[[:space:]]*{/,/^[[:space:]]*#[[:space:]]*add/ { s/^/#/; }' /usr/local/nginx/conf/sites-available/${reality_domain}.conf
+    sed -i '/^[[:space:]]*location \/[[:space:]]*{/,/^[[:space:]]*#[[:space:]]*add/ { s/^/#/; }' /usr/local/nginx/conf/sites-available/${cdn_domain}.conf
   }
 
   # 为新域名申请 SSL 证书
