@@ -270,10 +270,7 @@ function download_github_files() {
 
   # 创建目录，并递归下载子目录下的所有文件
   for dir in $dirs; do
-    mkdir -vp ${conf_dir}/${dir} || {
-      echo "目录创建失败"
-      return 1
-    }
+    mkdir -vp ${conf_dir}/${dir}
     download_github_files ${conf_dir}/${dir} ${github_api}/${dir}
   done
 
@@ -472,7 +469,7 @@ function check_dependencies() {
   local missing_packages=()
   case "$(_os)" in
   centos)
-    local packages=("ca-certificates" "openssl" "curl" "wget" "jq" "tzdata" "qrencode" "crontabs" "util-linux" "iproute" "procps-ng")
+    local packages=("ca-certificates" "openssl" "curl" "wget" "git" "jq" "tzdata" "qrencode" "crontabs" "util-linux" "iproute" "procps-ng")
     for pkg in "${packages[@]}"; do
       if ! rpm -q "$pkg" &>/dev/null; then
         missing_packages+=("$pkg")
@@ -480,7 +477,7 @@ function check_dependencies() {
     done
     ;;
   debian | ubuntu)
-    local packages=("ca-certificates" "openssl" "curl" "wget" "jq" "tzdata" "qrencode" "cron" "bsdmainutils" "iproute2" "procps")
+    local packages=("ca-certificates" "openssl" "curl" "wget" "git" "jq" "tzdata" "qrencode" "cron" "bsdmainutils" "iproute2" "procps")
     for pkg in "${packages[@]}"; do
       if ! dpkg -s "$pkg" &>/dev/null; then
         missing_packages+=("$pkg")
@@ -493,7 +490,7 @@ function check_dependencies() {
 
 function install_dependencies() {
   _info "正在下载相关依赖"
-  _install "ca-certificates openssl curl wget jq tzdata qrencode"
+  _install "ca-certificates openssl curl wget git jq tzdata qrencode"
   case "$(_os)" in
   centos)
     _install "crontabs util-linux iproute procps-ng"
@@ -1476,28 +1473,54 @@ function setup_nginx() {
 
 function setup_nginx_config_data() {
   [[ -f /usr/local/nginx/conf/nginxconfig.txt ]] || {
-    download_github_files '/usr/local/nginx/conf' 'https://api.github.com/repos/zxcvos/Xray-script/contents/nginx/conf'
+    mkdir -vp /usr/local/nginx/conf/nginxconfig.io
+    mkdir -vp /usr/local/nginx/conf/modules-enabled
     mkdir -vp /usr/local/nginx/conf/sites-available
     mkdir -vp /usr/local/nginx/conf/sites-enabled
     mkdir -vp /var/log/nginx
+    download_github_files '/usr/local/nginx/conf' 'https://api.github.com/repos/zxcvos/Xray-script/contents/nginx/conf'
     rm -rf /usr/local/nginx/conf/limit.conf
   }
 }
 
 function stop_renew_ssl() {
   # 获取旧数据
-  local old_domain=$(jq -r '.sni.domain' /usr/local/xray-script/config.json)
-  local old_cdn=$(jq -r '.sni.cdn' /usr/local/xray-script/config.json)
+  local old_domain=$(jq -r '.sni.old.domain' /usr/local/xray-script/config.json)
+  local old_cdn=$(jq -r '.sni.old.cdn' /usr/local/xray-script/config.json)
 
-  # 检查旧域名，不为空则停止旧域名续订
-  [[ -z "${old_domain}" ]] || {
-    bash /usr/local/xray-script/ssl.sh -s -d ${old_domain}
-    rm -rf /usr/local/nginx/conf/sites-{available,enabled}/${old_domain}.conf
-  }
-  [[ -z "${old_cdn}" ]] || [[ ${old_domain} == ${old_cdn} ]] || {
-    bash /usr/local/xray-script/ssl.sh -s -d ${old_cdn}
-    rm -rf /usr/local/nginx/conf/sites-{available,enabled}/${old_cdn}.conf
-  }
+  # 停止旧 REALITY 域名续订并清理配置
+  if [[ -n "${old_domain}" ]]; then
+    _info "处理旧 REALITY 域名: ${old_domain}"
+
+    if [[ -d "/usr/local/nginx/conf/certs/${old_domain}" ]]; then
+      _warn "停止 ${old_domain} 的 SSL 证书续订..."
+      if bash /usr/local/xray-script/ssl.sh -s -d "${old_domain}"; then
+        _info "SSL 证书续订停止成功."
+      else
+        _error "停止 SSL 证书续订失败."
+      fi
+      rm -rf /usr/local/nginx/conf/sites-{available,enabled}/${old_domain}.conf
+      jq '.sni.old.domain = ""' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
+    fi
+  fi
+
+  # 停止旧 CDN 域名续订并清理配置
+  if [[ -n "${old_cdn}" && "${old_cdn}" != "${old_domain}" ]]; then
+    _info "处理旧 CDN 域名: ${old_cdn}"
+
+    if [[ -d "/usr/local/nginx/conf/certs/${old_cdn}" ]]; then
+      _warn "停止 ${old_cdn} 的 SSL 证书续订..."
+      if bash /usr/local/xray-script/ssl.sh -s -d "${old_cdn}"; then
+        _info "SSL 证书续订停止成功."
+      else
+        _error "停止 SSL 证书续订失败."
+      fi
+      rm -rf /usr/local/nginx/conf/sites-{available,enabled}/${old_cdn}.conf
+      jq '.sni.old.cdn = ""' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
+    fi
+  elif [[ "${old_cdn}" == "${old_domain}" ]]; then
+    jq '.sni.old.cdn = ""' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
+  fi
 }
 
 function setup_ssl() {
@@ -1536,6 +1559,9 @@ function setup_ssl() {
   _info "完成 SSL 证书申请，并重启 Nginx"
   _systemctl restart nginx
 
+  # 更新 config 中 sni.old 信息
+  jq --arg target "${reality_domain}" '.sni.old.domain = $target' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
+  jq --arg target "${cdn_domain}" '.sni.old.cdn = $target' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
   # 更新 config 中 sni 信息
   jq --arg target "${reality_domain}" '.sni.domain = $target' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
   jq --arg target "${cdn_domain}" '.sni.cdn = $target' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
