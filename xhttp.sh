@@ -1003,7 +1003,9 @@ function get_xray_config_data() {
   local nginx_status=$(jq -r '.sni.status' /usr/local/xray-script/config.json)
   if [[ ${nginx_status} -eq 1 && 'sni' != ${XTLS_CONFIG} ]]; then
     stop_renew_ssl
-    bash /usr/local/xray-script/docker.sh --purge-cloudreve
+    if _exists "docker"; then
+      bash /usr/local/xray-script/docker.sh --purge-cloudreve
+    fi
     _systemctl stop nginx
     jq '.sni.status = 0' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
     jq '.sni.domain = ""' /usr/local/xray-script/config.json >/usr/local/xray-script/tmp.json && mv -f /usr/local/xray-script/tmp.json /usr/local/xray-script/config.json
