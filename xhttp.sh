@@ -1477,6 +1477,7 @@ function setup_nginx() {
 function setup_nginx_config_data() {
   [[ -f /usr/local/nginx/conf/nginxconfig.txt ]] || {
     download_github_files '/usr/local/nginx/conf' 'https://api.github.com/repos/zxcvos/Xray-script/contents/nginx/conf'
+    mkdir -vp /usr/local/nginx/conf/sites-available
     mkdir -vp /usr/local/nginx/conf/sites-enabled
     mkdir -vp /var/log/nginx
     rm -rf /usr/local/nginx/conf/limit.conf
