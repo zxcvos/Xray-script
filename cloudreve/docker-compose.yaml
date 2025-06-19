@@ -2,7 +2,7 @@ version: "3.8"
 services:
   cloudreve:
     container_name: cloudreve
-    image: cloudreve/cloudreve:latest
+    image: cloudreve/cloudreve:3.8.3
     restart: unless-stopped
     networks:
       - share_net
@@ -34,7 +34,7 @@ services:
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    command: cloudreve aria2 watchtower --cleanup --schedule "0 30 6 * * *"
+    command: aria2 watchtower --cleanup --schedule "0 30 6 * * *"
     networks:
       - share_net
 volumes:
