@@ -77,7 +77,7 @@ In SNI configurations, CDN share links default Alpn to H2. For H3 requirements, 
     bash ${HOME}/Xray-script.sh --vision
     ```
 
-  * Quick install HTTP
+  * Quick install XHTTP
 
     ```sh
     bash ${HOME}/Xray-script.sh --xhttp

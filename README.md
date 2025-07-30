@@ -78,7 +78,7 @@ SNI 配置中，CDN 的分享链接 Alpn 默认为 H2，如有 H3 需求，请�
     bash ${HOME}/Xray-script.sh --vision
     ```
 
-  * 快速安装 HTTP
+  * 快速安装 XHTTP
 
     ```sh
     bash ${HOME}/Xray-script.sh --xhttp
