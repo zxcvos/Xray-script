@@ -1428,6 +1428,8 @@ function handler_quick_install() {
     handler_script_config "${quick_install_type}"
     # 安装 Xray (使用 release 版本)
     handler_install 'release'
+    # 生成 x25519 配置
+    handler_x25519_config
     # 配置 Xray (生成并写入 config.json)
     handler_xray_config
     # 添加默认的阻止规则
