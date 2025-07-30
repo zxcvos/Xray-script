@@ -1,0 +1,298 @@
+{
+  "title": {
+    "tip": "Tips",
+    "info": "Info",
+    "warn": "Warning",
+    "error": "Error",
+    "config": "Config",
+    "route": "Route",
+    "pass": "Pass",
+    "fail": "Fail",
+    "test": "Test",
+    "multiple_values": "Multiple values separated by commas"
+  },
+  "main": {
+    "not_support": "Current script configuration type is not SNI, this feature is not available"
+  },
+  "menu": {
+    "choose": "Please choose an option",
+    "status": {
+      "default": "Default",
+      "not_installed": "Not Installed",
+      "not_configured": "Not Configured",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    },
+    "index": {
+      "description": "Xray Management Script",
+      "installation": "Installation",
+      "operation": "Operation",
+      "configuration": "Configuration",
+      "option1": "Full Installation",
+      "option2": "Install/Update Only",
+      "option3": "Uninstall",
+      "option4": "Start",
+      "option5": "Stop",
+      "option6": "Restart",
+      "option7": "Share Link & QR Code",
+      "option8": "Traffic Statistics",
+      "option9": "Manage Configuration",
+      "option0": "Exit"
+    },
+    "full_installation": {
+      "title": "Installation Flow",
+      "option1": "One-click Install",
+      "option2": "Custom Configuration",
+      "info1": "Stable version, Vision+Reality, block bt, cn, ads, enable geodata auto-update",
+      "info2": "Custom version, custom config"
+    },
+    "xray_version": {
+      "title": "Xray Version",
+      "option1": "Latest",
+      "option2": "Stable",
+      "option3": "Custom",
+      "info1": "Includes pre-release versions",
+      "info2": "Latest official release",
+      "info3": "Custom versions may have config compatibility issues"
+    },
+    "protocol_config": {
+      "title": "Protocol Config",
+      "option1": "VLESS+mKCP+seed",
+      "option2": "VLESS+Vision+REALITY",
+      "option3": "VLESS+XHTTP+REALITY",
+      "option4": "Trojan+XHTTP+REALITY",
+      "option5": "Dual Protocol Composite",
+      "option6": "SNI Split Composite",
+      "info1": "mKCP sacrifices bandwidth to reduce latency.",
+      "info2": "XTLS(Vision) solves TLS in TLS issue",
+      "info3": "XHTTP supports all scenarios",
+      "info3_1": "XHTTP has multiplexing by default, lower latency than Vision",
+      "info3_2": "v2rayN&G clients have global mux.cool settings, disable before using XHTTP",
+      "info4": "Replace VLESS with Trojan",
+      "info5": "Use VLESS+Vision+REALITY fallback to VLESS+XHTTP on port 443",
+      "info6": "SNI-based split through Nginx on port 443, supports CDN and direct connection"
+    },
+    "web_config": {
+      "title": "Web Config",
+      "option1": "Nginx Default Page",
+      "option2": "Cloudreve v3",
+      "option3": "Cloudreve v4",
+      "info1": "Cloudreve v3 auto-generates admin account",
+      "info2": "First registered user in Cloudreve v4 becomes admin"
+    },
+    "config_management": {
+      "title": "Configuration Management",
+      "option1": "Update Configuration",
+      "option2": "Route Management",
+      "option3": "SNI Configuration",
+      "option4": "Enable/Disable geodata auto-update",
+      "option5": "Language",
+      "info1": "Full config update",
+      "info2": "Manage blocking or WARP routing",
+      "info3": "Includes Nginx update, domain change, web config",
+      "info4": "geodata provided by  https://github.com/Loyalsoldier/v2ray-rules-dat "
+    },
+    "route_management": {
+      "title": "Custom Routing",
+      "option1": "Enable/Disable WARP Proxy",
+      "option2": "Add block IP route",
+      "option3": "Add block domain route",
+      "option4": "Add WARP IP route",
+      "option5": "Add WARP domain route",
+      "info1": "WARP Proxy is deployed via Docker, Docker will be auto-installed",
+      "info2": "WARP Proxy details: https://github.com/haoel/haoel.github.io?tab=readme-ov-file#1043-docker-proxy",
+      "info3": "Re-applying WARP account frequently may get IP banned by Cloudflare",
+      "info4": "Add IP-based block route to ruleTag block-ip",
+      "info5": "Add domain-based block route to ruleTag block-domain",
+      "info6": "(WARP must be enabled) Add WARP IP route to ruleTag warp-ip",
+      "info7": "(WARP must be enabled) Add WARP domain route to ruleTag warp-domain"
+    },
+    "sni_config": {
+      "title": "SNI Configuration",
+      "option1": "Change default domain",
+      "option2": "Change CDN domain",
+      "option3": "Update nginx",
+      "option4": "Enable/Disable nginx auto-update",
+      "option5": "Modify web config",
+      "option6": "Reset Cloudreve v3 admin data",
+      "info1": "Domain for REALITY",
+      "info2": "Domain for CDN"
+    }
+  },
+  "handler": {
+    "script": {
+      "config_update": "Updating script configuration"
+    },
+    "xray": {
+      "config_update": "Updating Xray configuration"
+    },
+    "warp": {
+      "status": "WARP PROXY is disabled, unable to add WARP routing"
+    },
+    "geodata": {
+      "close_cron": "Successfully stopped geodata auto-update task",
+      "open_cron": "Successfully started geodata auto-update task",
+      "update": "Executing geodata update"
+    },
+    "nginx": {
+      "close_cron": "Successfully stopped nginx auto-update task",
+      "open_cron": "Successfully started nginx auto-update task"
+    }
+  },
+  "read": {
+    "version": "Custom version (e.g. v1.0.0): ",
+    "rules": "Reset routing rules [y/N] ?",
+    "block_bt": "Enable bittorrent blocking [Y/n] ?",
+    "block_cn": "Enable China IP blocking [Y/n] ?",
+    "block_ad": "Enable ad blocking [Y/n] ?",
+    "auto_geo": "Enable geodata auto-update [Y/n] ?",
+    "port": "Enter port (range: 1-65535, default: 443, mKCP random): ",
+    "uuid": "Enter UUID (custom string supported, default auto-generated): ",
+    "fallback": "Enter Fallback UUID (custom string supported, default auto-generated): ",
+    "seed": "Enter seed (default auto-generated): ",
+    "password": "Enter password (default auto-generated): ",
+    "target": "Enter target domain (default random): ",
+    "domain": "Enter website domain (for Reality): ",
+    "cdn": "Enter website domain (for CDN): ",
+    "email": "Enter email for ZeroSSL registration: ",
+    "short": "Enter shortId (comma separated, default auto-generated): ",
+    "short_id_tip": "Supports input 0 to 8 to automatically generate shortId of corresponding length",
+    "path": "Enter path (default auto-generated): ",
+    "warp_ip": "Enter IP to route to WARP",
+    "warp_domain": "Enter domain to route to WARP",
+    "block_ip": "Enter IP to route to block",
+    "block_domain": "Enter domain to route to block"
+  },
+  "share": {
+    "client": "Client Configuration",
+    "extra": "XHTTP Extra Config",
+    "link": "Share Link",
+    "qr": "QR Code"
+  },
+  "check": {
+    "ip": {
+      "check": "Checking IP address validity: ",
+      "ipv4_valid": "IPv4 address is valid: ",
+      "ipv6_valid": "IPv6 address is valid: ",
+      "invalid": "Invalid IP format: "
+    },
+    "port": {
+      "check": "Checking port validity: ",
+      "valid": "Port number is valid: ",
+      "empty": "Input is empty, will be auto-configured",
+      "range_error": "Port must be between 1-65535: "
+    },
+    "uuid": {
+      "check": "Checking UUID type: ",
+      "string": "Input is a plain string, will be mapped to UUID by Xray",
+      "empty": "Input is empty, will auto-generate a UUID",
+      "valid": "UUID is valid: "
+    },
+    "password": {
+      "check": "Checking password validity: ",
+      "valid": "Password format is valid: ",
+      "empty": "Input is empty, will auto-generate password",
+      "space_error": "Password cannot contain spaces: ",
+      "length_error": "Password must be at least 8 characters: "
+    },
+    "path": {
+      "check": "Checking path validity: ",
+      "valid": "Path format is valid: ",
+      "empty": "Path is empty, will auto-generate random path",
+      "space_error": "Path cannot contain spaces: ",
+      "length_error": "Path length cannot exceed 128 characters: ",
+      "char_error": "Path contains invalid characters (only letters, digits, /, -, _, . allowed): ",
+      "double_slash_error": "Path cannot contain consecutive slashes: "
+    },
+    "short": {
+      "check": "Checking shortId validity: ",
+      "valid": "shortId is valid: ",
+      "empty": "shortId is empty, acceptable",
+      "digit": "shortId is a digit between 0-8: ",
+      "length_error": "Length must be even and between 2-16: ",
+      "hex_error": "Contains invalid character (non-hexadecimal): "
+    },
+    "domain": {
+      "empty": "Input is empty, will randomly select a domain from config",
+      "format_error": "Invalid domain format: ",
+      "resolve": "Resolving domain: ",
+      "resolve_fail": "Domain resolution failed: ",
+      "security_check": "Checking domain security: ",
+      "security_pass": "Domain ${domain} security check passed"
+    },
+    "tcp": {
+      "connect_check": "Testing TCP connection: ",
+      "connect_fail": "Cannot connect to ${domain}:443"
+    },
+    "tls": {
+      "info": "Fetching TLS information: ",
+      "version_error": "TLS connection failed, may not support TLS 1.3: ",
+      "pass": "Supports TLS 1.3",
+      "key_exchange_warn": "Does not use X25519 key exchange: ",
+      "key_exchange_pass": "Uses X25519 key exchange"
+    },
+    "dns": {
+      "check_start": "Checking if domain resolves to this host: ",
+      "resolution_fail": "Domain resolution failed: ",
+      "check_pass": "Domain ${domain} DNS check passed"
+    },
+    "config": {
+      "check": "Checking if Xray config file exists: ",
+      "exist": "Xray config file exists: ",
+      "not_exist": "Xray config file does not exist: "
+    },
+    "version": {
+      "check": "Checking if Xray version exists: ",
+      "exist": "Xray version exists: v",
+      "not_exist": "Xray version does not exist: v"
+    },
+    "email": {
+      "check": "Validating email address: ",
+      "valid": "Email format is valid: ",
+      "empty": "Email cannot be empty",
+      "format_error": "Invalid email format: "
+    }
+  },
+  "docker": {
+    "install": {
+      "start": "Installing Docker",
+      "centos8_fix": "Detected CentOS 8, fixing installation script compatibility",
+      "dry_run": "Performing pre-installation check (dry-run)",
+      "running": "Running Docker installation script"
+    },
+    "warp": {
+      "build": {
+        "start": "Building WARP image",
+        "fail": "Failed to build WARP image"
+      },
+      "enable": {
+        "start": "Enabling WARP container",
+        "success": "WARP container enabled (IP: ${container_ip})"
+      },
+      "disable": {
+        "stop": "Stopping WARP container",
+        "success": "WARP container stopped"
+      }
+    },
+    "cloudreve_v3": {
+      "create_dir": "Creating Cloudreve v3 related directories.",
+      "start": "Starting Cloudreve v3 service",
+      "stop": "Stopping Cloudreve v3 service",
+      "admin_info": "Username: ${username}, Password: ${password}",
+      "aria2_token": "aria2 token: ${token}",
+      "reset": "Resetting Cloudreve v3 information",
+      "purge": "Purging Cloudreve v3 service",
+      "start_service": "Starting Cloudreve v3 service",
+      "install_fallback": "Cloudreve v3 directory not found"
+    },
+    "cloudreve_v4": {
+      "create_dir": "Creating Cloudreve v4 related directories.",
+      "start": "Starting Cloudreve v4 service",
+      "stop": "Stopping Cloudreve v4 service",
+      "update": "Updating Cloudreve v4 image",
+      "purge": "Purging Cloudreve v4 service",
+      "start_service": "Starting Cloudreve v4 service",
+      "install_fallback": "Cloudreve v4 directory not found"
+    }
+  }
+}
