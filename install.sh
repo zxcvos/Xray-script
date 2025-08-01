@@ -190,6 +190,12 @@ function parse_args() {
 function load_i18n() {
     local lang="${LANG_PARAM#*=}" # 从 LANG_PARAM 中提取语言代码
 
+    # 如果存在脚本配置文件，则尝试从文件中获取语言代码
+    if [[ -z "${lang}" && -f "${SCRIPT_CONFIG_PATH}" ]]; then
+        # 尝试从脚本配置文件中获取语言代码
+        lang="$(jq -r '.language' "${SCRIPT_CONFIG_PATH}")"
+    fi
+
     # 如果语言设置为 "auto"，则使用系统环境变量 LANG 的第一部分作为语言代码
     if [[ "$lang" == "auto" ]]; then
         lang=$(echo "$LANG" | cut -d'_' -f1)
@@ -432,16 +438,18 @@ function check_xray_script_version() {
             sed -i "s|${local_version}|${remote_version}|" "${SCRIPT_CONFIG_PATH}"
             # 下载最新文件到临时目录
             download_xray_script_files "${temp_dir}"
+            # 切换到项目目录
+            cd "${PROJECT_ROOT}"
             # 删除旧的目录
             rm -rf "${I18N_DIR}" "${CORE_DIR}" "${SERVICE_DIR}" "${TOOL_DIR}" "${CONFIG_DIR}"
             # 移动新文件到项目目录
-            mv -f "${temp_dir}/i18n" "${PROJECT_ROOT}/"
-            mv -f "${temp_dir}/core" "${PROJECT_ROOT}/"
-            mv -f "${temp_dir}/service" "${PROJECT_ROOT}/"
-            mv -f "${temp_dir}/tool" "${PROJECT_ROOT}/"
-            mv -f "${temp_dir}/config" "${PROJECT_ROOT}/"
-            # 删除临时目录
-            rm -rf "${temp_dir}"
+            mv -f "${temp_dir}/i18n" "${PROJECT_ROOT}/" &&
+                mv -f "${temp_dir}/core" "${PROJECT_ROOT}/" &&
+                mv -f "${temp_dir}/service" "${PROJECT_ROOT}/" &&
+                mv -f "${temp_dir}/tool" "${PROJECT_ROOT}/" &&
+                mv -f "${temp_dir}/config" "${PROJECT_ROOT}/" &&
+                # 删除临时目录
+                rm -rf "${temp_dir}"
             # 打印更新完成信息
             echo -e "${GREEN}[${I18N_DATA['tip']}]${NC} ${I18N_DATA['completed']}"
             ;;
