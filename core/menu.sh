@@ -398,7 +398,7 @@ function print_status() {
     # 从配置中提取 Xray 版本、配置标签和 WARP 状态
     local XRAY_VERSION=$(echo "${SCRIPT_CONFIG}" | jq -r '.xray.version')
     local CONFIG_TAG=$(echo "${SCRIPT_CONFIG}" | jq -r '.xray.tag')
-    local WARP_STATUS=$(echo "${SCRIPT_CONFIG}" | jq -r '.status')
+    local WARP_STATUS=$(echo "${SCRIPT_CONFIG}" | jq -r '.xray.warp')
 
     # 从 i18n 数据中读取状态描述文本
     local not_installed=$(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.status.not_installed")
