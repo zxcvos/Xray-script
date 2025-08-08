@@ -170,7 +170,7 @@ function generate_server_names() {
     ' "${SCRIPT_CONFIG_PATH}")
 
     # 将修改后的配置内容写回配置文件
-    echo "${SCRIPT_CONFIG}" >"${SCRIPT_CONFIG_PATH}"
+    echo "${SCRIPT_CONFIG}" >"${SCRIPT_CONFIG_PATH}" && sleep 2
 
     # 从修改后的配置中提取并输出指定 target 的服务器名称列表
     echo "${SCRIPT_CONFIG}" | jq --arg key "${target}" '.target[$key]'
