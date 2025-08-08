@@ -360,7 +360,7 @@ function processes_language() {
     esac
     # 更新配置文件中的语言设置
     SCRIPT_CONFIG="$(jq --arg language "${LANG_PARAM}" '.language = $language' "${SCRIPT_CONFIG_PATH}")"
-    echo "${SCRIPT_CONFIG}" >"${SCRIPT_CONFIG_PATH}"
+    echo "${SCRIPT_CONFIG}" >"${SCRIPT_CONFIG_PATH}" && sleep 2
 }
 
 # =============================================================================
