@@ -526,7 +526,7 @@ function main() {
         PROJECT_ROOT='/usr/local/xray-script' # 设置默认项目根目录
         # 将默认路径更新到脚本配置文件中
         SCRIPT_CONFIG="$(jq --arg path "${PROJECT_ROOT}" '.path = $path' "${SCRIPT_CONFIG_PATH}")"
-        echo "${SCRIPT_CONFIG}" >"${SCRIPT_CONFIG_PATH}"
+        echo "${SCRIPT_CONFIG}" >"${SCRIPT_CONFIG_PATH}" && sleep 2
     # 如果配置文件中已有记录的路径，则使用该路径
     elif [[ -n "${script_path}" ]]; then
         PROJECT_ROOT="${script_path}"
@@ -534,7 +534,7 @@ function main() {
     elif [[ -n "${PROJECT_ROOT}" ]]; then
         # 将命令行指定的路径更新到脚本配置文件中
         SCRIPT_CONFIG="$(jq --arg path "${PROJECT_ROOT}" '.path = $path' "${SCRIPT_CONFIG_PATH}")"
-        echo "${SCRIPT_CONFIG}" >"${SCRIPT_CONFIG_PATH}"
+        echo "${SCRIPT_CONFIG}" >"${SCRIPT_CONFIG_PATH}" && sleep 2
     fi
 
     # 设置各个子目录的路径
@@ -564,11 +564,11 @@ function main() {
         esac
         # 更新配置文件中的语言设置
         SCRIPT_CONFIG="$(jq --arg language "${LANG_PARAM}" '.language = $language' "${SCRIPT_CONFIG_PATH}")"
-        echo "${SCRIPT_CONFIG}" >"${SCRIPT_CONFIG_PATH}"
+        echo "${SCRIPT_CONFIG}" >"${SCRIPT_CONFIG_PATH}" && sleep 2
     elif [[ "${LANG_PARAM}" =~ ^--lang= ]]; then
         # 如果通过命令行指定了语言，则更新配置文件
         SCRIPT_CONFIG="$(jq --arg language "${LANG_PARAM#*=}" '.language = $language' "${SCRIPT_CONFIG_PATH}")"
-        echo "${SCRIPT_CONFIG}" >"${SCRIPT_CONFIG_PATH}"
+        echo "${SCRIPT_CONFIG}" >"${SCRIPT_CONFIG_PATH}" && sleep 2
     fi
 
     # 启动主脚本，并传递快速安装选项
