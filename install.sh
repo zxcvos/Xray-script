@@ -1,22 +1,8 @@
 #!/usr/bin/env bash
-#
-# Copyright (C) 2025 zxcvos
-#
-# Xray-script:
-#   https://github.com/zxcvos/Xray-script
-#
-# Xray Official:
-#   Xray-core: https://github.com/XTLS/Xray-core
-#   REALITY: https://github.com/XTLS/REALITY
-#   XHTTP: https://github.com/XTLS/Xray-core/discussions/4113
-#
-# Xray-examples:
-#   https://github.com/chika0801/Xray-examples
-#   https://github.com/lxhao61/integrated-examples
-#   https://github.com/XTLS/Xray-core/discussions/4118
 # =============================================================================
 # 注释: 通过 Qwen3-Coder 生成。
 # 脚本名称: install.sh
+# 脚本仓库: https://github.com/zxcvos/Xray-script
 # 功能描述: Xray-script 项目的安装引导脚本。
 #           负责检查和安装系统依赖、下载项目文件、处理命令行参数、
 #           初始化配置、设置语言以及启动主菜单。
@@ -27,6 +13,16 @@
 # 配置:
 #   - 从 GitHub 下载项目文件到指定目录
 #   - ${SCRIPT_CONFIG_DIR}/config.json: 用于读取/设置语言和版本信息
+# Xray 官方链接:
+#   - Xray-core: https://github.com/XTLS/Xray-core
+#   - REALITY: https://github.com/XTLS/REALITY
+#   - XHTTP: https://github.com/XTLS/Xray-core/discussions/4113
+# Xray 配置模板:
+#   - Xray 配置示例: https://github.com/chika0801/Xray-examples
+#   - 最优组合示例: https://github.com/lxhao61/integrated-examples
+#   - xhttp 五合一配置: https://github.com/XTLS/Xray-core/discussions/4118
+#
+# Copyright (C) 2025 zxcvos
 # =============================================================================
 
 # set -Eeuxo pipefail
@@ -41,6 +37,10 @@ readonly GREEN='\033[32m'  # 绿色
 readonly YELLOW='\033[33m' # 黄色
 readonly RED='\033[31m'    # 红色
 readonly NC='\033[0m'      # 无颜色（重置）
+
+# 获取当前脚本的目录绝对路径和文件名
+readonly CUR_DIR="$(cd -P -- "$(dirname -- "$0")" && pwd -P)" # 当前脚本所在目录
+readonly CUR_FILE="$(basename "$0")"                          # 当前脚本文件名
 
 # 定义配置文件和相关目录的路径
 readonly SCRIPT_CONFIG_DIR="${HOME}/.xray-script"              # 主配置文件目录
@@ -432,26 +432,30 @@ function check_xray_script_version() {
         case "${is_update,,}" in # ${is_update,,} 转换为小写
         y | yes)
             # 如果用户选择更新
+            # 切换到 HOME 目录
+            cd "${HOME}"
+            # 定义临时目录
+            readonly temp_dir="${SCRIPT_CONFIG_DIR}/xray-script-temp"
             # 创建临时目录
-            readonly temp_dir="$(mktemp -d -p "${PROJECT_ROOT}" -t tmp.XXXXXXXX)"
-            # 更新版本号
-            sed -i "s|${local_version}|${remote_version}|" "${SCRIPT_CONFIG_PATH}"
+            mkdir -vp "${temp_dir}"
             # 下载最新文件到临时目录
             download_xray_script_files "${temp_dir}"
-            # 切换到项目目录
-            cd "${PROJECT_ROOT}"
-            # 删除旧的目录
-            rm -rf "${I18N_DIR}" "${CORE_DIR}" "${SERVICE_DIR}" "${TOOL_DIR}" "${CONFIG_DIR}"
-            # 移动新文件到项目目录
-            mv -f "${temp_dir}/i18n" "${PROJECT_ROOT}/" &&
-                mv -f "${temp_dir}/core" "${PROJECT_ROOT}/" &&
-                mv -f "${temp_dir}/service" "${PROJECT_ROOT}/" &&
-                mv -f "${temp_dir}/tool" "${PROJECT_ROOT}/" &&
-                mv -f "${temp_dir}/config" "${PROJECT_ROOT}/" &&
-                # 删除临时目录
-                rm -rf "${temp_dir}"
+            # 删除旧的项目目录
+            rm -rf "${PROJECT_ROOT}"
+            # 移动临时目录成为新项目目录
+            mv -f "${temp_dir}" "${PROJECT_ROOT}"
+            # 删除旧的脚本文件
+            rm -f "${CUR_DIR}/${CUR_FILE}"
+            # 更新当前脚本文件
+            cp -f "${PROJECT_ROOT}/install.sh" "${CUR_DIR}/${CUR_FILE}"
+            # 更新版本号
+            sed -i "s|${local_version}|${remote_version}|" "${SCRIPT_CONFIG_PATH}" && sleep 1
             # 打印更新完成信息
             echo -e "${GREEN}[${I18N_DATA['tip']}]${NC} ${I18N_DATA['completed']}"
+            # 重启脚本
+            bash "${CUR_DIR}/${CUR_FILE}"
+            # 退出脚本，避免重复执行
+            exit 0
             ;;
         *)
             # 如果用户选择不更新，则提示及时更新
