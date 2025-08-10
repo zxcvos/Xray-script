@@ -1,12 +1,8 @@
 #!/usr/bin/env bash
-#
-# Copyright (C) 2025 zxcvos
-#
-# Xray-script:
-#   https://github.com/zxcvos/Xray-script
 # =============================================================================
 # 注释: 通过 Qwen3-Coder 生成。
 # 脚本名称: main.sh
+# 脚本仓库: https://github.com/zxcvos/Xray-script
 # 功能描述: X-UI 项目的主要管理脚本。
 #           提供交互式菜单和命令行接口，用于安装、配置、管理 Xray-core
 #           和相关服务（如 Nginx, GeoIP, WARP 等），支持多语言。
@@ -17,6 +13,8 @@
 # 配置:
 #   - ${SCRIPT_CONFIG_DIR}/config.json: 用于读取语言设置 (language) 和脚本配置
 #   - ${I18N_DIR}/${lang}.json: 用于读取具体的提示文本 (i18n 数据文件)
+#
+# Copyright (C) 2025 zxcvos
 # =============================================================================
 
 # set -Eeuxo pipefail
@@ -361,6 +359,7 @@ function processes_language() {
     # 更新配置文件中的语言设置
     SCRIPT_CONFIG="$(jq --arg language "${LANG_PARAM}" '.language = $language' "${SCRIPT_CONFIG_PATH}")"
     echo "${SCRIPT_CONFIG}" >"${SCRIPT_CONFIG_PATH}" && sleep 2
+    bash "${CUR_DIR}/${CUR_FILE}.sh" && exit 0
 }
 
 # =============================================================================
