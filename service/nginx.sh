@@ -213,11 +213,11 @@ function backup_files() {
 # 编译依赖项
 function compile_dependencies() {
     # 常规依赖
-    _install ca-certificates curl wget gcc make git openssl tzdata
+    _install ca-certificates curl wget gcc make git openssl tzdata socat
     case "$(_os)" in
     centos)
         # 工具链
-        _install gcc-c++ perl-IPC-Cmd perl-Getopt-Long perl-Data-Dumper
+        _install bind-utils gcc-c++ perl-IPC-Cmd perl-Getopt-Long perl-Data-Dumper
         # 编译依赖
         _install pcre2-devel zlib-devel libxml2-devel libxslt-devel gd-devel geoip-devel perl-ExtUtils-Embed gperftools-devel perl-devel brotli-devel
         if ! perl -e "use FindBin" &>/dev/null; then
@@ -226,7 +226,7 @@ function compile_dependencies() {
         ;;
     debian | ubuntu)
         # 工具链
-        _install g++ perl-base perl
+        _install dnsutils g++ perl-base perl
         # 编译依赖
         _install libpcre2-dev zlib1g-dev libxml2-dev libxslt1-dev libgd-dev libgeoip-dev libgoogle-perftools-dev libperl-dev libbrotli-dev
         ;;
