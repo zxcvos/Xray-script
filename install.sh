@@ -285,14 +285,14 @@ function check_os() {
 # =============================================================================
 function check_dependencies() {
     # 定义基础必需的软件包列表
-    local packages=("ca-certificates" "openssl" "curl" "wget" "git" "jq" "tzdata" "qrencode")
+    local packages=("ca-certificates" "openssl" "curl" "wget" "git" "jq" "tzdata" "qrencode" "socat")
     local missing_packages=() # 声明数组存储缺失的包
 
     # 根据操作系统类型检查特定的软件包
     case "$(_os)" in
     centos)
         # 为 CentOS/RHEL 添加系统管理工具
-        packages+=("crontabs" "util-linux" "iproute" "procps-ng")
+        packages+=("crontabs" "util-linux" "iproute" "procps-ng" "bind-utils")
         # 遍历包列表，检查是否安装
         for pkg in "${packages[@]}"; do
             if ! rpm -q "$pkg" &>/dev/null; then
@@ -302,7 +302,7 @@ function check_dependencies() {
         ;;
     debian | ubuntu)
         # 为 Debian/Ubuntu 添加系统管理工具
-        packages+=("cron" "bsdmainutils" "iproute2" "procps")
+        packages+=("cron" "bsdmainutils" "iproute2" "procps" "dnsutils")
         # 遍历包列表，检查是否安装
         for pkg in "${packages[@]}"; do
             if ! dpkg -s "$pkg" &>/dev/null; then
