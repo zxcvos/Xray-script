@@ -6,7 +6,7 @@
 # 功能描述: 使用 acme.sh 管理 SSL 证书的脚本。
 #           支持安装/更新/卸载 acme.sh，签发/续期/停止续期证书，
 #           检查证书状态和信息，以及管理 Nginx 配置。
-# 作者: zxcvos (基于 acme.sh 官方文档和实践)
+# 作者: zxcvos
 # 时间: 2025-07-25
 # 版本: 1.0.0
 # 依赖: bash, curl, wget, git, jq, sed, awk, grep, nginx, systemctl, acme.sh
