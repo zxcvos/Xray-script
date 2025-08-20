@@ -1214,7 +1214,7 @@ function handler_ssl_install() {
         # 从脚本配置中读取 CA 邮箱
         local CA_EMAIL="$(echo "${SCRIPT_CONFIG}" | jq -r '.nginx.ca')"
         # 调用 ssl.sh 脚本安装 acme.sh
-        exec_ssl '--install' '--email' "${CA_EMAIL}"
+        exec_ssl '--install' --email=${CA_EMAIL}
     fi
 }
 
@@ -1243,15 +1243,15 @@ function handler_change_domain() {
     # 从脚本配置中获取旧域名
     local old_domain="$(echo "${SCRIPT_CONFIG}" | jq -r --arg key "${target_domain}" '.nginx[$key]')"
     # 如果 CONFIG_DATA 中没有新域名，且 stop_cert_service 为 "y"，则读取用户输入
-    if [[ -z "${CONFIG_DATA["${target_domain}"]}" && "${stop_cert_service}" == "y" ]]; then 
+    if [[ -z "${CONFIG_DATA["${target_domain}"]}" && "${stop_cert_service}" == "y" ]]; then
         exec_read "${target_domain}"
     else
         CONFIG_DATA["${target_domain}"]="${old_domain}"
     fi
     # 如果旧域名存在
-    if [[ -n "${old_domain}" && "${stop_cert_service}" == "y" ]] && exec_ssl '--status' '--domain' "${old_domain}"; then
+    if [[ -n "${old_domain}" && "${stop_cert_service}" == "y" ]] && exec_ssl '--status' --domain=${old_domain}; then
         # 停止旧域名的证书续签
-        exec_ssl '--stop-renew' '--domain' "${old_domain}"
+        exec_ssl '--stop-renew' --domain=${old_domain}
         # 删除旧域名的 Nginx 配置文件
         rm -rf ${NGINX_CONFIG_DIR}/sites-{available,enabled}/${old_domain}.conf
     fi
@@ -1264,7 +1264,7 @@ function handler_change_domain() {
     # 创建从 available 到 enabled 的软链接
     ln -sf "${NGINX_CONFIG_DIR}/sites-available/${CONFIG_DATA["${target_domain}"]}.conf" "${NGINX_CONFIG_DIR}/sites-enabled/${CONFIG_DATA["${target_domain}"]}.conf"
     # 为新域名申请 SSL 证书
-    exec_ssl '--issue' '--domain' "${CONFIG_DATA["${target_domain}"]}"
+    exec_ssl '--issue' --domain=${CONFIG_DATA["${target_domain}"]}
     # 更新脚本配置中的域名
     SCRIPT_CONFIG="$(echo "${SCRIPT_CONFIG}" | jq --arg key "${target_domain}" --arg domain "${CONFIG_DATA["${target_domain}"]}" '.nginx[$key] = $domain')"
     SCRIPT_CONFIG="$(echo "${SCRIPT_CONFIG}" | jq --arg key "${target_domain}" --arg domain "${old_domain}" 'if $key == "domain" then del(.target[$key]) else . end')"
@@ -1300,9 +1300,6 @@ function handler_nginx_config() {
     mv "${NGINX_CONFIG_DIR}/nginx.conf" "${NGINX_CONFIG_DIR}/default.conf.bak"
     # 复制项目中的 Nginx 配置文件到目标目录
     cp -af ${CONFIG_DIR}/nginx/conf/* ${NGINX_CONFIG_DIR}
-    # 从脚本配置中读取域名和 CDN
-    # CONFIG_DATA['domain']="$(echo "${SCRIPT_CONFIG}" | jq -r '.nginx.domain')"
-    # CONFIG_DATA['cdn']="$(echo "${SCRIPT_CONFIG}" | jq -r '.nginx.cdn')"
 }
 
 # =============================================================================
