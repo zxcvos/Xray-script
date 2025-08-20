@@ -324,13 +324,13 @@ function check_dependencies() {
 # =============================================================================
 function install_dependencies() {
     # 定义基础必需的软件包列表
-    local packages=("ca-certificates" "openssl" "curl" "wget" "git" "jq" "tzdata" "qrencode")
+    local packages=("ca-certificates" "openssl" "curl" "wget" "git" "jq" "tzdata" "qrencode" "socat")
 
     # 根据操作系统类型添加特定的软件包并执行安装
     case "$(_os)" in
     centos)
         # 为 CentOS/RHEL 添加系统管理工具
-        packages+=("crontabs" "util-linux" "iproute" "procps-ng")
+        packages+=("crontabs" "util-linux" "iproute" "procps-ng" "bind-utils")
         # 检查是否使用 dnf 包管理器 (较新版本)
         if cmd_exists "dnf"; then
             # 使用 dnf 更新系统并安装软件包
@@ -352,7 +352,7 @@ function install_dependencies() {
         ;;
     ubuntu | debian)
         # 为 Debian/Ubuntu 添加系统管理工具
-        packages+=("cron" "bsdmainutils" "iproute2" "procps")
+        packages+=("cron" "bsdmainutils" "iproute2" "procps" "dnsutils")
         # 更新包列表并安装软件包
         apt update -y
         for pkg in "${packages[@]}"; do
