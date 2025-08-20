@@ -294,5 +294,126 @@
       "start_service": "启动 Cloudreve v4 服务",
       "install_fallback": "未找到 Cloudreve v4 相关目录"
     }
+  },
+  "ssl": {
+    "install": {
+      "already_installed": "acme.sh 已安装。",
+      "start": "正在安装 acme.sh...",
+      "fail_download": "acme.sh 安装失败。",
+      "fail_autoupgrade": "acme.sh 自动升级设置失败。",
+      "fail_set_ca": "设置默认 CA 失败。"
+    },
+    "update": {
+      "start": "正在更新 acme.sh...",
+      "fail": "acme.sh 更新失败。"
+    },
+    "purge": {
+      "start": "正在卸载 acme.sh...",
+      "fail_disable_autoupgrade": "禁用 acme.sh 自动升级失败。",
+      "fail_uninstall_cmd": "acme.sh 卸载命令执行失败。",
+      "success": "acme.sh 及相关目录已删除。"
+    },
+    "issue": {
+      "no_domain": "未指定域名，无法申请证书。",
+      "start": "正在签发 SSL 证书...",
+      "fail_create_acme_dir": "无法创建 ACME 验证目录: ${ACME_WEBROOT_PATH}",
+      "fail_create_cert_dir": "无法创建 SSL 证书目录: ${cert_path}",
+      "fail_backup_nginx": "无法备份 Nginx 配置文件: ${nginx_conf}",
+      "fail_reload_nginx": "Nginx 重载失败，请检查配置文件。",
+      "fail_start_nginx": "Nginx 启动失败，请检查配置文件。",
+      "fail_first_attempt": "首次签发失败，尝试启用调试模式重新签发...",
+      "fail_ecc_issue": "ECC 证书申请失败。",
+      "fail_install_cert": "安装证书失败。"
+    },
+    "renew": {
+      "start": "正在强制续期所有 SSL 证书...",
+      "fail": "续期失败。"
+    },
+    "stop_renew": {
+      "start": "正在停止续期指定的 SSL 证书...",
+      "fail_cmd": "acme.sh 停止续期命令执行失败。",
+      "no_domain": "未指定域名，无法停止续期。"
+    },
+    "check_cron": {
+      "start": "正在检查自动续期的定时任务设置..."
+    },
+    "status": {
+      "no_domain": "检查状态时未提供域名。"
+    },
+    "info": {
+      "no_domain": "显示信息时未提供域名。",
+      "start": "正在显示 SSL 证书信息..."
+    },
+    "help": {
+      "usage": "用法: ${script_name} [命令] [选项]",
+      "commands_title": "命令",
+      "cmd_install": "安装 acme.sh",
+      "cmd_update": "更新 acme.sh",
+      "cmd_purge": "卸载 acme.sh 并删除相关目录",
+      "cmd_issue": "签发/更新 SSL 证书",
+      "cmd_renew": "强制续期所有 SSL 证书",
+      "cmd_stop_renew": "停止续期指定的 SSL 证书",
+      "cmd_check_cron": "检查自动续期的定时任务设置",
+      "cmd_info": "显示 SSL 证书信息",
+      "cmd_status": "检查 SSL 证书状态",
+      "cmd_help": "显示此帮助信息",
+      "options_title": "选项",
+      "opt_domain": "指定域名",
+      "opt_email": "指定 acme.sh 账户邮箱"
+    }
+  },
+  "nginx": {
+    "compile": {
+      "install_deps": "正在安装编译依赖项...",
+      "fetch_versions": "检索 Nginx 和 OpenSSL 的最新版本。",
+      "download_nginx": "下载最新版本的 Nginx。",
+      "download_openssl": "下载最新版本的 OpenSSL。",
+      "fetch_brotli": "检索 ngx_brotli 并构建依赖项。",
+      "configure": "配置 Nginx 编译选项。",
+      "swap": "申请 512MB 虚拟内存。",
+      "start_compile": "编译 Nginx。",
+      "executing": "正在执行命令: ${cmd}",
+      "fail_exec_cmd": "执行命令 (${cmd}) 失败，请检查并重试。"
+    },
+    "install": {
+      "start_install": "安装 Nginx。"
+    },
+    "update": {
+      "fetch_versions": "检索 Nginx 和 OpenSSL 的最新版本。",
+      "read_current_versions": "读取 Nginx 和 OpenSSL 的当前版本。",
+      "check_update": "判断是否需要更新。",
+      "start_update": "更新 Nginx。",
+      "smooth_upgrade": "正在平滑升级 Nginx...",
+      "no_old_process": "未找到旧的 Nginx 进程。跳过后续步骤。"
+    },
+    "purge": {
+      "start_purge": "正在卸载 Nginx...",
+      "purged": "Nginx 已卸载。"
+    },
+    "service": {
+      "configure": "配置 Nginx systemd 服务。",
+      "complete": "Nginx systemd 服务配置完成。"
+    },
+    "os": {
+      "unsupported_os": "不支持的操作系统。",
+      "unsupported_ubuntu": "不支持的操作系统，请切换到 Ubuntu 20+ 并重试。",
+      "unsupported_debian": "不支持的操作系统，请切换到 Debian 10+ 并重试。",
+      "unsupported_centos": "不支持的操作系统，请切换到 CentOS 7+ 并重试。"
+    },
+    "backup_files": {
+      "backup": "备份"
+    },
+    "main": {
+      "invalid_option": "无效选项: '${option}'。使用 '$0 --help' 查看用法信息。"
+    },
+    "help": {
+      "usage": "用法: ${script_name} [选项]",
+      "options_title": "选项",
+      "opt_install": "安装 Nginx",
+      "opt_update": "更新 Nginx",
+      "opt_brotli": "启用 Brotli 压缩 (与 --install 或 --update 一起使用)",
+      "opt_purge": "卸载 Nginx",
+      "opt_help": "显示帮助信息"
+    }
   }
 }
