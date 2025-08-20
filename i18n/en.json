@@ -294,5 +294,126 @@
       "start_service": "Starting Cloudreve v4 service",
       "install_fallback": "Cloudreve v4 directory not found"
     }
+  },
+  "ssl": {
+    "install": {
+      "already_installed": "acme.sh is already installed.",
+      "start": "Installing acme.sh...",
+      "fail_download": "Failed to install acme.sh.",
+      "fail_autoupgrade": "Failed to set acme.sh auto-upgrade.",
+      "fail_set_ca": "Failed to set default CA."
+    },
+    "update": {
+      "start": "Updating acme.sh...",
+      "fail": "Failed to update acme.sh."
+    },
+    "purge": {
+      "start": "Uninstalling acme.sh...",
+      "fail_disable_autoupgrade": "Failed to disable acme.sh auto-upgrade.",
+      "fail_uninstall_cmd": "acme.sh uninstall command failed.",
+      "success": "acme.sh and related directories have been deleted."
+    },
+    "issue": {
+      "no_domain": "No domain specified, cannot apply for certificate.",
+      "start": "Issuing SSL certificate...",
+      "fail_create_acme_dir": "Failed to create ACME challenge directory: ${ACME_WEBROOT_PATH}",
+      "fail_create_cert_dir": "Failed to create SSL certificate directory: ${cert_path}",
+      "fail_backup_nginx": "Failed to backup Nginx config file: ${nginx_conf}",
+      "fail_reload_nginx": "Failed to reload Nginx, please check config file.",
+      "fail_start_nginx": "Failed to start Nginx, please check config file.",
+      "fail_first_attempt": "First attempt failed, trying again with debug mode...",
+      "fail_ecc_issue": "ECC certificate application failed.",
+      "fail_install_cert": "Failed to install certificate."
+    },
+    "renew": {
+      "start": "Forcing renewal of all SSL certificates...",
+      "fail": "Renewal failed."
+    },
+    "stop_renew": {
+      "start": "Stopping renewal of the specified SSL certificate...",
+      "fail_cmd": "acme.sh stop renewal command failed.",
+      "no_domain": "No domain specified, cannot stop renewal."
+    },
+    "check_cron": {
+      "start": "Checking automatic renewal cron job settings..."
+    },
+    "status": {
+      "no_domain": "No domain provided when checking status."
+    },
+    "info": {
+      "no_domain": "No domain provided when displaying info.",
+      "start": "Displaying SSL certificate information..."
+    },
+    "help": {
+      "usage": "Usage: ${script_name} [command] [options]",
+      "commands_title": "Commands",
+      "cmd_install": "Install acme.sh",
+      "cmd_update": "Update acme.sh",
+      "cmd_purge": "Uninstall acme.sh and delete related directories",
+      "cmd_issue": "Issue/Renew SSL certificate",
+      "cmd_renew": "Force renewal of all SSL certificates",
+      "cmd_stop_renew": "Stop renewal of the specified SSL certificate",
+      "cmd_check_cron": "Check automatic renewal cron job settings",
+      "cmd_info": "Display SSL certificate information",
+      "cmd_status": "Check SSL certificate status",
+      "cmd_help": "Show this help message",
+      "options_title": "Options",
+      "opt_domain": "Specify domain",
+      "opt_email": "Specify acme.sh account email"
+    }
+  },
+  "nginx": {
+    "compile": {
+      "install_deps": "Installing compilation dependencies...",
+      "fetch_versions": "Fetching the latest versions of Nginx and OpenSSL.",
+      "download_nginx": "Downloading the latest version of Nginx.",
+      "download_openssl": "Downloading the latest version of OpenSSL.",
+      "fetch_brotli": "Fetching ngx_brotli and building dependencies.",
+      "configure": "Configuring Nginx compilation options.",
+      "swap": "Allocating 512MB of virtual memory.",
+      "start_compile": "Compiling Nginx.",
+      "executing": "Executing command: ${cmd}",
+      "fail_exec_cmd": "Failed to execute command (${cmd}), please check and retry."
+    },
+    "install": {
+      "start_install": "Installing Nginx."
+    },
+    "update": {
+      "fetch_versions": "Fetching the latest versions of Nginx and OpenSSL.",
+      "read_current_versions": "Reading the current versions of Nginx and OpenSSL.",
+      "check_update": "Checking if an update is needed.",
+      "start_update": "Updating Nginx.",
+      "smooth_upgrade": "Performing a smooth upgrade of Nginx...",
+      "no_old_process": "Old Nginx process not found. Skipping subsequent steps."
+    },
+    "purge": {
+      "start_purge": "Uninstalling Nginx...",
+      "purged": "Nginx has been uninstalled."
+    },
+    "service": {
+      "configure": "Configuring Nginx systemd service.",
+      "complete": "Nginx systemd service configuration completed."
+    },
+    "os": {
+      "unsupported_os": "Unsupported operating system.",
+      "unsupported_ubuntu": "Unsupported operating system, please switch to Ubuntu 20+ and try again.",
+      "unsupported_debian": "Unsupported operating system, please switch to Debian 10+ and try again.",
+      "unsupported_centos": "Unsupported operating system, please switch to CentOS 7+ and try again."
+    },
+    "backup_files": {
+      "backup": "Backup"
+    },
+    "main": {
+      "invalid_option": "Invalid option: '${option}'. Use '$0 --help' to see usage information."
+    },
+    "help": {
+      "usage": "Usage: ${script_name} [options]",
+      "options_title": "Options",
+      "opt_install": "Install Nginx",
+      "opt_update": "Update Nginx",
+      "opt_brotli": "Enable Brotli compression (use with --install or --update)",
+      "opt_purge": "Uninstall Nginx",
+      "opt_help": "Show this help message"
+    }
   }
 }
