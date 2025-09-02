@@ -603,15 +603,19 @@ function handler_x25519_config() {
     # 生成 X25519 密钥对
     local X25519="$(exec_generate '--x25519')"
     # 提取私钥
-    local PRIVATE_KEY="$(echo "${X25519%%,*}")"
+    local PRIVATE_KEY="$(echo "${X25519}" | awk -F, '{print $1}')"
     # 提取公钥
-    local PUBLIC_KEY="$(echo "${X25519##*,}")"
+    local PUBLIC_KEY="$(echo "${X25519}" | awk -F, '{print $2}')"
+    # 提取 Hash32
+    local HASH32="$(echo "${X25519}" | awk -F, '{print $3}')"
     # 输出显示 x25519 密钥对
     echo -e "${GREEN}[Private Key]${NC} "${PRIVATE_KEY}"" >&2
     echo -e "${GREEN}[Public Key]${NC} "${PUBLIC_KEY}"" >&2
-    # 更新脚本配置中的私钥和公钥
+    echo -e "${GREEN}[Hash32]${NC} "${HASH32}"" >&2
+    # 更新脚本配置中的私钥和公钥，以及哈希值
     SCRIPT_CONFIG="$(echo "${SCRIPT_CONFIG}" | jq --arg privateKey "${PRIVATE_KEY}" '.xray.privateKey = $privateKey')"
     SCRIPT_CONFIG="$(echo "${SCRIPT_CONFIG}" | jq --arg publicKey "${PUBLIC_KEY}" '.xray.publicKey = $publicKey')"
+    SCRIPT_CONFIG="$(echo "${SCRIPT_CONFIG}" | jq --arg hash32 "${HASH32}" '.xray.hash32 = $hash32')"
     # 将更新后的脚本配置写入文件
     echo "${SCRIPT_CONFIG}" >"${SCRIPT_CONFIG_PATH}" && sleep 2
 }
