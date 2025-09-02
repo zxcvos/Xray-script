@@ -190,9 +190,9 @@ function generate_x25519() {
     local X25519_KEY=$(xray x25519)
 
     # 使用 sed 提取第一行中的私钥部分
-    local PRIVATE_KEY=$(echo "${X25519_KEY}" | sed -ne '1s/.*key:\s*//p')
+    local PRIVATE_KEY=$(echo "${X25519_KEY}" | sed -ne '1s/.*:\s*//p')
     # 使用 sed 提取第二行中的公钥部分
-    local PUBLIC_KEY=$(echo "${X25519_KEY}" | sed -ne '2s/.*key:\s*//p')
+    local PUBLIC_KEY=$(echo "${X25519_KEY}" | sed -ne '2s/.*:\s*//p')
 
     # 将私钥和公钥用逗号连接后输出
     echo "${PRIVATE_KEY},${PUBLIC_KEY}"
