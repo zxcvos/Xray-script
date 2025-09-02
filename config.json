@@ -20,6 +20,7 @@
     "path": "",
     "privateKey": "",
     "publicKey": "",
+    "hash32": "",
     "target": "",
     "serverNames": [
       ""
