@@ -193,9 +193,11 @@ function generate_x25519() {
     local PRIVATE_KEY=$(echo "${X25519_KEY}" | sed -ne '1s/.*:\s*//p')
     # 使用 sed 提取第二行中的公钥部分
     local PUBLIC_KEY=$(echo "${X25519_KEY}" | sed -ne '2s/.*:\s*//p')
+    # 使用 sed 提取第三行中的哈希部分
+    local HASH32=$(echo "${X25519_KEY}" | sed -ne '3s/.*:\s*//p')
 
-    # 将私钥和公钥用逗号连接后输出
-    echo "${PRIVATE_KEY},${PUBLIC_KEY}"
+    # 将私钥和公钥，以及哈希用逗号连接后输出
+    echo "${PRIVATE_KEY},${PUBLIC_KEY},${HASH32}"
 }
 
 # =============================================================================
