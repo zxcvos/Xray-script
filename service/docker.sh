@@ -27,7 +27,7 @@
 # 配置:
 #   - ${SCRIPT_CONFIG_DIR}/config.json: 用于读取语言设置 (language)
 #   - ${I18N_DIR}/${lang}.json: 用于读取具体的提示文本 (i18n 数据文件)
-#   - ${DOCKER_DIR}/cloudflare-warp/Dockerfile: WARP 容器的构建文件
+#   - ${CONFIG_DIR}/cloudflare-warp/Dockerfile: WARP 容器的构建文件
 #   - ${CLOUDREVE_V*_YAML_DIR}/docker-compose.yaml: Cloudreve 服务的编排文件
 # =============================================================================
 
@@ -54,7 +54,7 @@ readonly SCRIPT_CONFIG_DIR="${HOME}/.xray-script"              # 主配置文件
 readonly I18N_DIR="${PROJECT_ROOT}/i18n"                       # 国际化文件目录
 readonly CONFIG_DIR="${PROJECT_ROOT}/config"                   # 配置文件目录
 readonly TOOL_DIR="${PROJECT_ROOT}/tool"                       # 工具脚本目录
-readonly DOCKER_DIR="${PROJECT_ROOT}/docker"                   # Docker 相关文件目录
+readonly DOCKER_DIR="${SCRIPT_CONFIG_DIR}/docker"              # Docker 相关文件目录
 readonly WARP_DIR="${DOCKER_DIR}/cloudflare-warp"              # WARP Docker 目录
 readonly CLOUDREVE_V3_DIR="${DOCKER_DIR}/cloudreve/v3"         # Cloudreve v3 Docker 目录
 readonly CLOUDREVE_V3_YAML_DIR="${CONFIG_DIR}/cloudreve/v3"    # Cloudreve v3 配置文件目录
@@ -284,8 +284,7 @@ function enable_warp() {
         # 创建 Cloudflare WARP 容器所需的目录
         mkdir -vp "${WARP_DIR}" >&2
         # 使用 docker run 命令启动容器，失败则调用 print_error 退出
-        docker run -d --restart=always --name=xray-script-warp -v "${WARP_DIR}":/var/lib/cloudflare-warp:rw xray-script-warp >&2 || print_error "$(echo "$I18N_DATA" | jq -r '.docker.warp.build.fail')"
-
+        docker run -d --restart=always --name=xray-script-warp --log-driver json-file --log-opt max-size=100m --log-opt max-file=3 -v "${WARP_DIR}":/var/lib/cloudflare-warp:rw xray-script-warp >&2 || print_error "$(echo "$I18N_DATA" | jq -r '.docker.warp.build.fail')"
         # 获取新启动容器的 IP 地址
         local container_ip=$(get_container_ip xray-script-warp)
         # 打印启用成功的消息，并包含容器 IP
@@ -613,6 +612,20 @@ function stop_cloudreve_v4() {
 }
 
 # =============================================================================
+# 函数名称: clean_container_logs
+# 功能描述: 清空指定容器日志数据。
+# 参数:
+#   $1: 容器名称或 ID（默认清空 warp 日志记录）
+# 返回值: 无 (执行清理过程)
+# =============================================================================
+function clean_container_logs() {
+    # 获取容器名称或 ID
+    local container_name_or_id="${1:-xray-script-warp}"
+    # 找到容器的日志文件并清空
+    truncate -s 0 $(docker inspect --format='{{.LogPath}}' "${container_name_or_id}")
+}
+
+# =============================================================================
 # 函数名称: main
 # 功能描述: 脚本的主入口函数。
 #           1. 加载国际化数据。
@@ -643,6 +656,7 @@ function main() {
     --purge-cloudreve-v4) purge_cloudreve_v4 ;;             # 彻底卸载 Cloudreve v4
     --start-cloudreve-v4) start_cloudreve_v4 ;;             # 启动 Cloudreve v4
     --stop-cloudreve-v4) stop_cloudreve_v4 ;;               # 停止 Cloudreve v4
+    --clean-container-logs) clean_container_logs $2 ;;      # 清空容器日志文件
     esac
 }
 
