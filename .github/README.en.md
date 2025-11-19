@@ -50,6 +50,9 @@
 3. Before using SNI configuration, disable CDN protection to avoid SSL certificate issues
 4. For upstream/downstream separation details, see [XHTTP: Beyond REALITY][XHTTP] and [xhttp 五合一配置][xhttp 五合一配置]
 5. When using SNI to obtain a certificate and encountering the error ["Could not get nonce, let's try again"], please check the [ZeroSSL Status Page](https://status.zerossl.com/) . It is highly likely that ZeroSSL's "Free ACME Service" is experiencing "Service disruption" or "Service outage"
+6. Version v2025.11.19 resolves the issue where 【"WARP was enabled without log limits, causing container logs to accumulate continuously, eventually filling up disk space"】.
+   1. Users who have already started WARP can go to 【"Manage Configuration"】 -> 【"Routing Management"】 and select the 【"Reset WARP Proxy"】 option. This option clears container logs and resets the WARP Proxy.
+   2. Log limits have been added. To use the WARP feature, simply enable it directly.
 
 ## Share Links
 
@@ -180,9 +183,9 @@ The drawback is that compilation takes a long time.
 
 **Nginx:** `/usr/local/nginx`
 
-**Cloudreve:** `/usr/local/cloudreve`
+**Cloudreve:** `$HOME/.xray-script/cloudreve`
 
-**Cloudflare-warp:** `/usr/local/cloudflare_warp`
+**Cloudflare-warp:** `$HOME/.xray-script/cloudflare_warp`
 
 **Xray:** See **[Xray-install](https://github.com/XTLS/Xray-install)**
 
