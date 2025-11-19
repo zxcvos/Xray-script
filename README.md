@@ -192,9 +192,9 @@ SNI 配置适合安装一次后长期使用，不适合反复重置系统安装�
 
 **Nginx:** `/usr/local/nginx`
 
-**Cloudreve:** `/usr/local/xray-script/docker/cloudreve`
+**Cloudreve:** `$HOME/.xray-script/docker/cloudreve`
 
-**Cloudflare-warp:** `/usr/local/xray-script/docker/warp`
+**Cloudflare-warp:** `$HOME/.xray-script/docker/warp`
 
 **Xray:** 见 **[Xray-install](https://github.com/XTLS/Xray-install)**
 
