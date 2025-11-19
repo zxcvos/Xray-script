@@ -95,17 +95,19 @@
     "route_management": {
       "title": "自定义分流",
       "option1": "开/关 WARP Proxy",
-      "option2": "添加屏蔽 ip 分流",
-      "option3": "添加屏蔽 domain 分流",
-      "option4": "添加 WARP ip 分流",
-      "option5": "添加 WARP domain 分流",
+      "option2": "重置 WARP Proxy",
+      "option3": "添加屏蔽 ip 分流",
+      "option4": "添加屏蔽 domain 分流",
+      "option5": "添加 WARP ip 分流",
+      "option6": "添加 WARP domain 分流",
       "info1": "WARP Proxy 功能通过 Docker 部署, 开启时自动安装 Docker",
       "info2": "WARP Proxy 详情 https://github.com/haoel/haoel.github.io?tab=readme-ov-file#1043-docker-%E4%BB%A3%E7%90%86",
       "info3": "每次成功开启 WARP Proxy 都会重新申请 WARP 账号, 频繁操作可能导致 IP 被 Cloud­flare 拉黑",
-      "info4": "添加关于 ip 的屏蔽分流, 相关分流添加在 ruleTag 为 block-ip 中",
-      "info5": "添加关于 domain 的屏蔽分流, 相关分流添加在 ruleTag 为 block-domain 中",
-      "info6": "(需要开启 WARP)添加关于 ip 的 WARP 分流, 相关分流添加在 ruleTag 为 warp-ip 中",
-      "info7": "(需要开启 WARP)添加关于 domain 的 WARP 分流, 相关分流添加在 ruleTag 为 warp-domain 中"
+      "info4": "清空 WARP 容器日志文件，并重置容器",
+      "info5": "添加关于 ip 的屏蔽分流, 相关分流添加在 ruleTag 为 block-ip 中",
+      "info6": "添加关于 domain 的屏蔽分流, 相关分流添加在 ruleTag 为 block-domain 中",
+      "info7": "(需要开启 WARP)添加关于 ip 的 WARP 分流, 相关分流添加在 ruleTag 为 warp-ip 中",
+      "info8": "(需要开启 WARP)添加关于 domain 的 WARP 分流, 相关分流添加在 ruleTag 为 warp-domain 中"
     },
     "sni_config": {
       "title": "SNI 配置",
