@@ -296,10 +296,11 @@ function processes_routing() {
     # 根据用户选择执行不同的路由配置操作
     case ${choose} in
     1) exec_handler '--warp' ;;                     # 选择 1：配置 WARP
-    2) exec_handler '--routing' 'block' 'ip' ;;     # 选择 2：配置阻止 IP 规则
-    3) exec_handler '--routing' 'block' 'domain' ;; # 选择 3：配置阻止 Domain 规则
-    4) exec_handler '--routing' 'warp' 'ip' ;;      # 选择 4：配置 WARP IP 规则
-    5) exec_handler '--routing' 'warp' 'domain' ;;  # 选择 5：配置 WARP Domain 规则
+    2) exec_handler '--reset-warp' ;;               # 选择 2：重置 WARP
+    3) exec_handler '--routing' 'block' 'ip' ;;     # 选择 3：配置阻止 IP 规则
+    4) exec_handler '--routing' 'block' 'domain' ;; # 选择 4：配置阻止 Domain 规则
+    5) exec_handler '--routing' 'warp' 'ip' ;;      # 选择 5：配置 WARP IP 规则
+    6) exec_handler '--routing' 'warp' 'domain' ;;  # 选择 6：配置 WARP Domain 规则
     *) exit 0 ;;                                    # 其他情况：退出脚本
     esac
     exec_handler '--restart' # 重启 Xray 服务
