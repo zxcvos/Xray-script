@@ -314,6 +314,8 @@ function menu_route() {
     echo -e "${GREEN}4.${NC} $(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.route_management.option4")"
     # 打印选项 5
     echo -e "${GREEN}5.${NC} $(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.route_management.option5")"
+    # 打印选项 6
+    echo -e "${GREEN}5.${NC} $(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.route_management.option6")"
 
     # 打印分隔线
     echo -e "------------------------------------------------------"
@@ -329,6 +331,8 @@ function menu_route() {
     echo -e "4. $(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.route_management.info6")"
     # 打印选项 5 的说明信息
     echo -e "5. $(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.route_management.info7")"
+    # 打印选项 6 的说明信息
+    echo -e "6. $(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.route_management.info8")"
     # 打印分隔线
     echo -e "------------------------------------------------------"
 }
