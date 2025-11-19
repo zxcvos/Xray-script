@@ -1063,6 +1063,35 @@ function handler_warp() {
 }
 
 # =============================================================================
+# 函数名称: handler_reset_warp
+# 功能描述: 重新构建并启动 WARP 容器。
+#           1. 确保 Docker 已安装。
+#           2. 检查当前 WARP 状态。
+#           3. 如果已启用，则执行清空容器日志，并重置 WARP 容器。
+#           4. 如果未启用，则跳过。
+# 参数: 无
+# 返回值: 无 (通过调用其他函数和脚本执行操作)
+# =============================================================================
+function handler_reset_warp() {
+    # 确保 Docker 已安装
+    handler_docker
+    # 从脚本配置中读取当前 WARP 状态
+    local WARP_STATUS="$(echo "${SCRIPT_CONFIG}" | jq -r '.xray.warp')"
+    # 从 Xray 配置文件加载配置
+    XRAY_CONFIG="$(jq '.' "${XRAY_CONFIG_PATH}")"
+    # 如果 WARP 已启用 (状态为 1)
+    if [[ ${WARP_STATUS} -eq 1 ]]; then
+        # 清空 WARP 容器日志数据
+        exec_docker '--clean-container-logs'
+        # 调用 docker.sh 禁用 WARP 容器
+        exec_docker '--disable-warp'
+        # 调用 docker.sh 构建并启用 WARP 容器
+        exec_docker '--build-warp'
+        exec_docker '--enable-warp'
+    fi
+}
+
+# =============================================================================
 # 函数名称: handler_nginx_install
 # 功能描述: 安装 Nginx。
 #           1. 检查系统中是否已安装 nginx 命令。
@@ -1493,6 +1522,7 @@ function main() {
     --nginx-cron) handler_nginx_cron ;;         # 管理 Nginx Cron
     --geodata-cron) handler_geodata_cron ;;     # 管理 GeoData Cron
     --warp) handler_warp ;;                     # 管理 WARP
+    --reset-warp) handler_reset_warp ;;         # 重置 WARP
     --traffic) handler_traffic ;;               # 显示流量统计
     --start) handler_start ;;                   # 启动 Xray
     --stop) handler_stop ;;                     # 停止 Xray
