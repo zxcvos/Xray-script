@@ -626,6 +626,24 @@ function clean_container_logs() {
 }
 
 # =============================================================================
+# 函数名称: obtain_container_ip
+# 功能描述: 获取容器 IP 地址。
+# 参数: 
+#   $1: 容器名称（默认获取 warp 容器 IP 地址）
+# 返回值: 容器的 IP 地址 (echo 输出)，或无输出
+# =============================================================================
+function obtain_container_ip() {
+    # 获取容器名称
+    local container_name="${1:-xray-script-warp}"
+	# 获取容器的 IP 地址
+	local container_ip=$(get_container_ip "${container_name}")
+    if [[ -n "${container_ip}" ]]; then
+        # 输出容器 IP 地址
+        echo "${container_ip}"
+    fi
+}
+
+# =============================================================================
 # 函数名称: main
 # 功能描述: 脚本的主入口函数。
 #           1. 加载国际化数据。
@@ -657,6 +675,7 @@ function main() {
     --start-cloudreve-v4) start_cloudreve_v4 ;;             # 启动 Cloudreve v4
     --stop-cloudreve-v4) stop_cloudreve_v4 ;;               # 停止 Cloudreve v4
     --clean-container-logs) clean_container_logs $2 ;;      # 清空容器日志文件
+    --obtain-container-ip) obtain_container_ip $2 ;;        # 获取容器 IP 地址
     esac
 }
 
