@@ -48,8 +48,8 @@
     },
     "xray_version": {
       "title": "装载管理",
-      "option1": "最新本",
-      "option2": "稳定本",
+      "option1": "最新版",
+      "option2": "稳定版",
       "option3": "自选版",
       "info1": "最新版包含了 pre-release 版本",
       "info2": "稳定版为最新发布的非 pre-release 版本",
