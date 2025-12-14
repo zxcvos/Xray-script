@@ -291,7 +291,7 @@ function _install() {
     case "$(_os)" in # 根据操作系统类型进行分支处理
     centos)
         # 检查是否使用 dnf 包管理器 (较新版本 CentOS/Fedora)
-        if _exists "dnf"; then
+        if cmd_exists "dnf"; then
             # 添加必要的 dnf 插件和 EPEL 源
             packages_name="dnf-plugins-core epel-release epel-next-release ${packages_name}"
             installed_packages="$(dnf list installed 2>/dev/null)" # 获取已安装包列表
@@ -436,7 +436,7 @@ function compile_dependencies() {
     case "$(_os)" in
     centos)
         # 安装 CentOS 特定的工具和开发库
-        _install bind-utils gcc-c++ perl-IPC-Cmd perl-Getopt-Long perl-Data-Dumper
+        _install bind-utils gcc-c++ perl-IPC-Cmd perl-Getopt-Long perl-Data-Dumper perl-Time-Piece
         _install pcre2-devel zlib-devel libxml2-devel libxslt-devel gd-devel geoip-devel perl-ExtUtils-Embed gperftools-devel perl-devel brotli-devel
         # 检查并安装 Perl 模块 FindBin
         if ! perl -e "use FindBin" &>/dev/null; then
