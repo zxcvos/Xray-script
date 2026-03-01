@@ -261,6 +261,16 @@ function menu_web_config() {
     echo -e "------------------------------------------------------"
 }
 
+function menu_ca_vendor() {
+    echo -e "------------------ $(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.ca_vendor.title") ------------------"
+    echo -e "${GREEN}1.${NC} $(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.ca_vendor.option1")(${GREEN}$(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.status.default")${NC})"
+    echo -e "${GREEN}2.${NC} $(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.ca_vendor.option2")"
+    echo -e "------------------------------------------------------"
+    echo -e "1. $(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.ca_vendor.info1")"
+    echo -e "2. $(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.ca_vendor.info2")"
+    echo -e "------------------------------------------------------"
+}
+
 # =============================================================================
 # 函数名称: menu_config
 # 功能描述: 显示配置管理菜单。
@@ -364,6 +374,7 @@ function menu_sni_config() {
     echo -e "${GREEN}6.${NC} $(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.sni_config.option6")"
     # 打印选项 7
     echo -e "${GREEN}7.${NC} $(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.sni_config.option7")"
+    echo -e "${GREEN}8.${NC} $(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.sni_config.option8")"
 
     # 打印分隔线
     echo -e "------------------------------------------------------"
@@ -371,6 +382,7 @@ function menu_sni_config() {
     echo -e "1. $(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.sni_config.info1")"
     # 打印选项 2 的说明信息
     echo -e "2. $(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.sni_config.info2")"
+    echo -e "8. $(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.sni_config.info3")"
     # 打印分隔线
     echo -e "------------------------------------------------------"
 }
@@ -492,6 +504,7 @@ function main() {
     --xray) menu_xray >&2 ;;              # 显示 Xray 版本菜单
     --config) menu_xray_config >&2 ;;     # 显示协议配置菜单
     --web) menu_web_config >&2 ;;         # 显示 Web 配置菜单
+    --ca) menu_ca_vendor >&2 ;;
     --management) menu_config >&2 ;;      # 显示配置管理菜单
     --route) menu_route >&2 ;;            # 显示路由管理菜单
     --sni) menu_sni_config >&2 ;;         # 显示 SNI 配置菜单
