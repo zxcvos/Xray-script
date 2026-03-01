@@ -473,12 +473,83 @@ function handler_reset_script_config() {
         SCRIPT_CONFIG=$(reset_json_fields "${SCRIPT_CONFIG}" 'xray' 'version' 'warp' 'rules')
         ;;
     nginx)
-        # 重置 nginx 部分，保留 version, ca 字段
-        SCRIPT_CONFIG=$(reset_json_fields "${SCRIPT_CONFIG}" 'nginx' 'version' 'ca')
+        # 重置 nginx 部分，保留 version, ca, ca_server 字段
+        SCRIPT_CONFIG=$(reset_json_fields "${SCRIPT_CONFIG}" 'nginx' 'version' 'ca' 'ca_server')
         ;;
     esac
     # 将重置后的脚本配置写入文件
     echo "${SCRIPT_CONFIG}" >"${SCRIPT_CONFIG_PATH}" && sleep 2
+}
+
+function handler_ca_server() {
+    local target_ca_server="${1:-zerossl}"
+    local current_ca_server="$(echo "${SCRIPT_CONFIG}" | jq -r '.nginx.ca_server')"
+    local domain="$(echo "${SCRIPT_CONFIG}" | jq -r '.nginx.domain')"
+    local cdn_domain="$(echo "${SCRIPT_CONFIG}" | jq -r '.nginx.cdn')"
+    local -a reissue_targets=()
+    local -a switched_domains=()
+    local reissue_domain=''
+
+    case "${target_ca_server,,}" in
+    zerossl | letsencrypt) ;;
+    *) target_ca_server='zerossl' ;;
+    esac
+    case "${current_ca_server,,}" in
+    zerossl | letsencrypt) ;;
+    *) current_ca_server='zerossl' ;;
+    esac
+
+    if [[ "${target_ca_server,,}" == "${current_ca_server,,}" ]]; then
+        handler_update_ocsp_config "${target_ca_server}" 'y'
+        return 0
+    fi
+
+    [[ -n "${domain}" && "${domain}" != 'null' ]] && reissue_targets+=("${domain}")
+    if [[ -n "${cdn_domain}" && "${cdn_domain}" != 'null' && "${cdn_domain}" != "${domain}" ]]; then
+        reissue_targets+=("${cdn_domain}")
+    fi
+
+    for reissue_domain in "${reissue_targets[@]}"; do
+        if exec_ssl '--issue' "--domain=${reissue_domain}" "--ca=${target_ca_server}"; then
+            switched_domains+=("${reissue_domain}")
+            continue
+        fi
+
+        for reissue_domain in "${switched_domains[@]}"; do
+            exec_ssl '--issue' "--domain=${reissue_domain}" "--ca=${current_ca_server}" || true
+        done
+        exec_ssl '--set-ca' "--ca=${current_ca_server}" || true
+        handler_update_ocsp_config "${current_ca_server}" 'y' || true
+        _error "ca switch failed, rolled back to ${current_ca_server}"
+    done
+
+    SCRIPT_CONFIG="$(echo "${SCRIPT_CONFIG}" | jq --arg caServer "${target_ca_server,,}" '.nginx.ca_server = $caServer')"
+    echo "${SCRIPT_CONFIG}" >"${SCRIPT_CONFIG_PATH}" && sleep 2
+    exec_ssl '--set-ca' "--ca=${target_ca_server}" || _error "failed to set acme default ca"
+    handler_update_ocsp_config "${target_ca_server}" 'y'
+}
+
+function handler_update_ocsp_config() {
+    local ca_server="${1:-zerossl}"
+    local need_reload="${2:-n}"
+    local nginx_conf="${NGINX_CONFIG_DIR}/nginx.conf"
+    case "${ca_server,,}" in
+    zerossl | letsencrypt) ;;
+    *) ca_server='zerossl' ;;
+    esac
+    [[ -f "${nginx_conf}" ]] || return 0
+
+    if [[ "${ca_server,,}" == 'letsencrypt' ]]; then
+        sed -i -E 's|^([[:space:]]*)ssl_stapling([[:space:]]+on;)|\1# ssl_stapling\2|' "${nginx_conf}"
+        sed -i -E 's|^([[:space:]]*)ssl_stapling_verify([[:space:]]+on;)|\1# ssl_stapling_verify\2|' "${nginx_conf}"
+    else
+        sed -i -E 's|^([[:space:]]*)#([[:space:]]*)ssl_stapling([[:space:]]+on;)|\1ssl_stapling\3|' "${nginx_conf}"
+        sed -i -E 's|^([[:space:]]*)#([[:space:]]*)ssl_stapling_verify([[:space:]]+on;)|\1ssl_stapling_verify\3|' "${nginx_conf}"
+    fi
+
+    if [[ "${need_reload}" == 'y' ]] && cmd_exists 'nginx' && systemctl -q is-active nginx; then
+        nginx -t && systemctl -q reload nginx || _error "nginx.conf check failed after OCSP toggle"
+    fi
 }
 
 # =============================================================================
@@ -828,6 +899,12 @@ function handler_sni_config() {
     esac
 }
 
+function handler_check_sni_ports() {
+    if ! exec_check '--sni-ports'; then
+        _error "$(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.sni.port_guard_fail")"
+    fi
+}
+
 # =============================================================================
 # 函数名称: handler_xray_version
 # 功能描述: 处理 Xray 版本配置。
@@ -1153,17 +1230,18 @@ function handler_nginx_install() {
     # 检查 nginx 命令是否存在
     if ! cmd_exists 'nginx'; then
         # 调用 nginx.sh 脚本安装 Nginx (带 Brotli 支持)
-        bash "${NGINX_PATH}" --install --brotli
+        bash "${NGINX_PATH}" --install --brotli || _error "nginx install failed"
         # 安装 SSL 证书管理工具
-        handler_ssl_install
+        handler_ssl_install || _error "ssl install failed during nginx setup"
         # 配置 Nginx
-        handler_nginx_config
+        handler_nginx_config || _error "nginx config apply failed"
         # 获取 Nginx 版本
         local NGINX_VERSION="$(nginx -V 2>&1 | grep "^nginx version:.*" | cut -d / -f 2)"
+        [[ -n "${NGINX_VERSION}" ]] || _error "failed to detect nginx version"
         # 更新脚本配置中的 Nginx 版本
         SCRIPT_CONFIG=$(echo "${SCRIPT_CONFIG}" | jq --arg version "${NGINX_VERSION}" '.nginx.version = $version')
         # 将更新后的脚本配置写入文件
-        echo "${SCRIPT_CONFIG}" >"${SCRIPT_CONFIG_PATH}" && sleep 2
+        echo "${SCRIPT_CONFIG}" >"${SCRIPT_CONFIG_PATH}" && sleep 2 || _error "failed to persist nginx version"
     fi
 }
 
@@ -1293,8 +1371,10 @@ function handler_ssl_install() {
     if [[ ! -e "${ACME_PATH}" ]]; then
         # 从脚本配置中读取 CA 邮箱
         local CA_EMAIL="$(echo "${SCRIPT_CONFIG}" | jq -r '.nginx.ca')"
+        local CA_SERVER="$(echo "${SCRIPT_CONFIG}" | jq -r '.nginx.ca_server')"
+        [[ -z "${CA_SERVER}" || "${CA_SERVER}" == 'null' ]] && CA_SERVER='zerossl'
         # 调用 ssl.sh 脚本安装 acme.sh
-        exec_ssl '--install' --email=${CA_EMAIL}
+        exec_ssl '--install' "--email=${CA_EMAIL}" "--ca=${CA_SERVER}" || exit 1
     fi
 }
 
@@ -1399,13 +1479,9 @@ function handler_change_domain() {
 # 返回值: 无 (通过文件操作和调用其他脚本执行)
 # =============================================================================
 function handler_renew_ssl() {
-    # 域名的证书续签
-    if exec_ssl '--renew'; then
-        # 重启或启动 Nginx
-        handler_nginx_restart
-        # 重启 Xray 服务
-        handler_restart
-    fi
+    exec_ssl '--renew' || _error "ssl renew failed"
+    handler_nginx_restart || _error "nginx restart failed after renew"
+    handler_restart || _error "xray restart failed after renew"
 }
 
 # =============================================================================
@@ -1420,11 +1496,15 @@ function handler_renew_ssl() {
 # =============================================================================
 function handler_nginx_config() {
     # 创建 Nginx sites-enabled 目录 (如果不存在)
-    mkdir -vp ${NGINX_CONFIG_DIR}/sites-enabled
-    # 备份原始的 nginx.conf 文件
-    mv "${NGINX_CONFIG_DIR}/nginx.conf" "${NGINX_CONFIG_DIR}/default.conf.bak"
+    mkdir -vp ${NGINX_CONFIG_DIR}/sites-enabled || return 1
+    if [[ -f "${NGINX_CONFIG_DIR}/nginx.conf" ]]; then
+        mv "${NGINX_CONFIG_DIR}/nginx.conf" "${NGINX_CONFIG_DIR}/default.conf.bak" || return 1
+    fi
     # 复制项目中的 Nginx 配置文件到目标目录
-    cp -af ${CONFIG_DIR}/nginx/conf/* ${NGINX_CONFIG_DIR}
+    cp -af ${CONFIG_DIR}/nginx/conf/* ${NGINX_CONFIG_DIR} || return 1
+
+    local CA_SERVER="$(echo "${SCRIPT_CONFIG}" | jq -r '.nginx.ca_server')"
+    handler_update_ocsp_config "${CA_SERVER}" || return 1
 }
 
 # =============================================================================
@@ -1603,6 +1683,7 @@ function main() {
         handler_x25519_config   # 生成 x25519 配置
         handler_xray_config     # 更新 Xray 配置
         ;;
+    --sni-ports) handler_check_sni_ports ;;
     --routing) handler_routing "$@" ;; # 处理路由规则
     --change-domain)
         handler_change_domain "$1" # 处理域名配置
@@ -1616,6 +1697,7 @@ function main() {
     --renew-certificate) handler_renew_ssl ;;   # 强制证书续签
     --web) handler_web "$1" ;;                  # 配置 Web 服务
     --v3-reset) handler_cloudreve_v3 'reset' ;; # 重置 Cloudreve v3
+    --ca-server) handler_ca_server "$1" ;;
     --share) handler_share ;;                   # 显示分享链接
     --nginx-cron) handler_nginx_cron ;;         # 管理 Nginx Cron
     --geodata-cron) handler_geodata_cron ;;     # 管理 GeoData Cron
