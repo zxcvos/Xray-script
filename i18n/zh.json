@@ -12,7 +12,8 @@
     "multiple_values": "多个值请用英文逗号分隔"
   },
   "main": {
-    "not_support": "当前脚本配置类型不是 SNI ，无法使用该功能"
+    "not_support": "当前脚本配置类型不是 SNI ，无法使用该功能",
+    "handler_failed": "操作执行失败，已安全退出以避免污染配置或环境"
   },
   "menu": {
     "choose": "请选择操作",
@@ -80,6 +81,13 @@
       "info1": "Cloudreve v3 版本自动生成管理员账号",
       "info2": "Cloudreve v4 版本首个注册的账户会被设置为管理员"
     },
+    "ca_vendor": {
+      "title": "CA 厂商",
+      "option1": "ZeroSSL",
+      "option2": "Let's Encrypt",
+      "info1": "脚本默认 CA 服务器是 ZeroSSL，有时可能会导致获取证书的时候一直出现：Pending，The CA is processing your order，please just wait.",
+      "info2": "Let's Encrypt 不再支持 OCSP 装订功能，但不影响 REALITY 的使用"
+    },
     "config_management": {
       "title": "管理配置",
       "option1": "更新配置",
@@ -120,8 +128,10 @@
       "option5": "开/关 nginx 自动更新",
       "option6": "修改 Web 配置",
       "option7": "重置 Cloudreve v3 版管理员数据",
+      "option8": "切换 CA 厂商",
       "info1": "Reality 对应的域名",
-      "info2": "套用 CDN 的域名"
+      "info2": "套用 CDN 的域名",
+      "info3": "切换后会写入配置，并影响后续证书签发"
     }
   },
   "handler": {
@@ -142,6 +152,9 @@
     "nginx": {
       "close_cron": "成功停止 nginx 自动更新任务",
       "open_cron": "成功开启 nginx 自动更新任务"
+    },
+    "sni": {
+      "port_guard_fail": "SNI 初始化已停止：必需端口检查未通过"
     }
   },
   "read": {
@@ -161,6 +174,7 @@
     "domain": "请输入网站域名 (供 Reality 使用): ",
     "cdn": "请输入网站域名 (供 CDN 使用): ",
     "email": "请输入用于注册 ZeroSSL 的邮箱: ",
+    "switch_ca": "切换 CA 需要重新申请证书，是否继续切换 [y/N]: ",
     "short": "请输入 shortId (多个值请用英文逗号分隔，默认自动生成): ",
     "short_id_tip": "支持输入 0 到 8 自动生成对应倍数长度的 shortId",
     "path": "请输入 path (默认自动生成): ",
@@ -187,6 +201,22 @@
       "valid": "端口号合法：",
       "empty": "输入值为空，将自动配置端口",
       "range_error": "端口号必须在 1-65535 之间："
+    },
+    "sni_ports": {
+      "start": "正在执行 SNI 必需端口检查（80/443）...",
+      "occupied_check": "正在检查端口是否被占用：",
+      "occupied_fail": "端口已被占用，无法继续 SNI 配置：",
+      "occupied_pass": "端口未被占用：",
+      "open_check": "正在检查防火墙是否放行 TCP 端口：",
+      "open_pass": "防火墙已放行 TCP 端口：",
+      "open_fail": "防火墙未放行 TCP 端口：",
+      "open_skip": "未检测到活动防火墙策略，默认视为放行：",
+      "firewall_active": "检测到活动防火墙：",
+      "allow_try": "正在尝试自动放行 TCP 端口：",
+      "allow_pass": "已自动放行 TCP 端口：",
+      "allow_fail": "自动放行 TCP 端口失败：",
+      "manual_allow": "请手动放行 TCP 端口后重试（示例：ufw allow <端口>/tcp 或 firewall-cmd --permanent --add-port=<端口>/tcp && firewall-cmd --reload）：",
+      "all_pass": "SNI 必需端口检查通过"
     },
     "uuid": {
       "check": "正在检查 UUID 类型：",
@@ -328,6 +358,9 @@
       "fail_reload_nginx": "Nginx 重载失败，请检查配置文件。",
       "fail_start_nginx": "Nginx 启动失败，请检查配置文件。",
       "fail_first_attempt": "首次签发失败，尝试启用调试模式重新签发...",
+      "zerossl_pending_switch": "ZeroSSL 签发失败并出现 Pending（The CA is processing your order），已自动切换为 Let's Encrypt 继续申请。",
+      "letsencrypt_retry": "Let's Encrypt 第 ${attempt} 次申请证书...",
+      "letsencrypt_fail": "证书申请失败，请检查防火墙与配置。",
       "fail_ecc_issue": "ECC 证书申请失败。",
       "fail_install_cert": "安装证书失败。"
     },
@@ -339,6 +372,9 @@
       "start": "正在停止续期指定的 SSL 证书...",
       "fail_cmd": "acme.sh 停止续期命令执行失败。",
       "no_domain": "未指定域名，无法停止续期。"
+    },
+    "set_ca": {
+      "not_installed": "acme.sh 未安装，无法设置默认 CA。"
     },
     "check_cron": {
       "start": "正在检查自动续期的定时任务设置..."
@@ -362,10 +398,12 @@
       "cmd_check_cron": "检查自动续期的定时任务设置",
       "cmd_info": "显示 SSL 证书信息",
       "cmd_status": "检查 SSL 证书状态",
+      "cmd_set_ca": "设置 acme.sh 默认 CA",
       "cmd_help": "显示此帮助信息",
       "options_title": "选项",
       "opt_domain": "指定域名",
-      "opt_email": "指定 acme.sh 账户邮箱"
+      "opt_email": "指定 acme.sh 账户邮箱",
+      "opt_ca": "指定 CA 服务器(zerossl 或 letsencrypt)"
     }
   },
   "nginx": {
