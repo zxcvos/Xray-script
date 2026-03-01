@@ -146,6 +146,24 @@ function _test() {
 }
 
 # =============================================================================
+# 函数名称: cmd_exists
+# 功能描述: 检查命令是否存在于当前环境中（兼容 type/command/which）。
+# 参数:
+#   $1: 命令名
+# 返回值: 0-存在, 非0-不存在
+# =============================================================================
+function cmd_exists() {
+    local cmd="$1"
+    if eval type type >/dev/null 2>&1; then
+        eval type "$cmd" >/dev/null 2>&1
+    elif command >/dev/null 2>&1; then
+        command -v "$cmd" >/dev/null 2>&1
+    else
+        which "$cmd" >/dev/null 2>&1
+    fi
+}
+
+# =============================================================================
 # 函数名称: valid_domain
 # 功能描述: 使用正则表达式检查给定字符串是否为有效的域名格式。
 # 参数:
@@ -221,6 +239,146 @@ function test_tcp_connection() {
     # 成功则返回 0，失败（如连接被拒绝、超时）则返回非 0
     echo >/dev/tcp/"$1"/"$2" 2>/dev/null
     return $? # 返回上一条命令的退出码
+}
+
+# =============================================================================
+# 函数名称: get_listening_process_by_port
+# 功能描述: 获取指定端口的监听进程标识（优先 ss，回退 lsof）。
+# =============================================================================
+function get_listening_process_by_port() {
+    local port="$1"
+    local process=''
+    if cmd_exists 'ss'; then
+        process="$(ss -lntp "( sport = :${port} )" 2>/dev/null | awk 'NR > 1 {print $NF; exit}')"
+    fi
+    if [[ -z "${process}" ]] && cmd_exists 'lsof'; then
+        process="$(lsof -nP -iTCP:${port} -sTCP:LISTEN 2>/dev/null | awk 'NR == 2 {print $1"/"$2; exit}')"
+    fi
+    [[ "${process}" == '-' ]] && process=''
+    echo "${process}"
+}
+
+# =============================================================================
+# 函数名称: check_firewall_tcp_port_open
+# 功能描述: 检查活动防火墙（ufw/firewalld）是否已放行指定 TCP 端口。
+# 返回值: 0 已放行, 1 未放行, 2 未检测到活动防火墙
+# =============================================================================
+function check_firewall_tcp_port_open() {
+    local port="$1"
+    if cmd_exists 'ufw' && ufw status 2>/dev/null | grep -q '^Status: active'; then
+        ufw status 2>/dev/null | grep -Eiq "^${port}(/tcp)?[[:space:]]+ALLOW"
+        return $?
+    fi
+    if cmd_exists 'firewall-cmd' && cmd_exists 'systemctl' && systemctl -q is-active firewalld; then
+        firewall-cmd --quiet --query-port="${port}/tcp"
+        return $?
+    fi
+    return 2
+}
+
+# 检测当前已激活的防火墙名称（空格分隔）
+function detect_active_firewalls() {
+    local -a active_firewalls=()
+    if cmd_exists 'ufw' && ufw status 2>/dev/null | grep -q '^Status: active'; then
+        active_firewalls+=('ufw')
+    fi
+    if cmd_exists 'firewall-cmd' && cmd_exists 'systemctl' && systemctl -q is-active firewalld; then
+        active_firewalls+=('firewalld')
+    fi
+    echo "${active_firewalls[*]}"
+}
+
+# 尝试放行指定 TCP 端口
+function allow_firewall_tcp_port() {
+    local firewall="$1"
+    local port="$2"
+    case "${firewall}" in
+    ufw)
+        ufw allow "${port}/tcp" >/dev/null 2>&1
+        ;;
+    firewalld)
+        firewall-cmd --quiet --permanent --add-port="${port}/tcp" && firewall-cmd --quiet --reload
+        ;;
+    *)
+        return 1
+        ;;
+    esac
+}
+
+# =============================================================================
+# 函数名称: ensure_firewall_tcp_port_open
+# 功能描述: 确保指定端口在活动防火墙中放行；若未放行则自动尝试放行。
+# =============================================================================
+function ensure_firewall_tcp_port_open() {
+    local port="$1"
+    local firewall_check_rc=0
+    local active_firewalls_raw=''
+    local -a active_firewalls=()
+    local firewall=''
+    local allow_failed=0
+
+    _test "$(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.sni_ports.open_check")${port}"
+    check_firewall_tcp_port_open "${port}"
+    firewall_check_rc=$?
+    if [[ ${firewall_check_rc} -eq 0 ]]; then
+        _pass "$(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.sni_ports.open_pass")${port}"
+        return 0
+    fi
+
+    active_firewalls_raw="$(detect_active_firewalls)"
+    if [[ -z "${active_firewalls_raw}" ]]; then
+        _info "$(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.sni_ports.open_skip")${port}"
+        return 0
+    fi
+    read -r -a active_firewalls <<<"${active_firewalls_raw}"
+
+    _info "$(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.sni_ports.firewall_active")${active_firewalls_raw}"
+    _test "$(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.sni_ports.allow_try")${port}"
+    for firewall in "${active_firewalls[@]}"; do
+        if ! allow_firewall_tcp_port "${firewall}" "${port}"; then
+            allow_failed=1
+        fi
+    done
+
+    check_firewall_tcp_port_open "${port}"
+    firewall_check_rc=$?
+    if [[ ${allow_failed} -eq 0 && ${firewall_check_rc} -eq 0 ]]; then
+        _pass "$(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.sni_ports.allow_pass")${port}"
+        return 0
+    fi
+
+    _fail "$(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.sni_ports.allow_fail")${port}"
+    _info "$(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.sni_ports.manual_allow")${port}"
+    return 1
+}
+
+# =============================================================================
+# 函数名称: check_sni_ports
+# 功能描述: SNI 初始化前检查 80/443 端口是否被占用并确保防火墙放行。
+# =============================================================================
+function check_sni_ports() {
+    local -a required_ports=(80 443)
+    local port=''
+    local occupied_by=''
+
+    _info "$(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.sni_ports.start")"
+
+    for port in "${required_ports[@]}"; do
+        _test "$(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.sni_ports.occupied_check")${port}"
+        occupied_by="$(get_listening_process_by_port "${port}")"
+        if [[ -n "${occupied_by}" ]]; then
+            _fail "$(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.sni_ports.occupied_fail")${port} (${occupied_by})"
+            return 1
+        fi
+        _pass "$(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.sni_ports.occupied_pass")${port}"
+
+        if ! ensure_firewall_tcp_port_open "${port}"; then
+            return 1
+        fi
+    done
+
+    _pass "$(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.sni_ports.all_pass")"
+    return 0
 }
 
 # =============================================================================
@@ -656,6 +814,7 @@ function main() {
     --tag) check_xray_config_exists "$@" >&2 ;;   # 检查 Xray 配置文件
     --xray) check_xray_version_exists "$@" >&2 ;; # 检查 Xray 版本
     --email) validate_email "$@" >&2 ;;           # 验证邮箱
+    --sni-ports) check_sni_ports "$@" >&2 ;;      # 检查 SNI 必需端口与防火墙状态
     esac
 }
 
