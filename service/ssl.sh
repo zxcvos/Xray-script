@@ -138,6 +138,13 @@ function print_error() {
     exit 1
 }
 
+# =============================================================================
+# 函数名称: normalize_ca_server
+# 功能描述: 规范化 CA 参数，仅允许 zerossl / letsencrypt，非法值回落 zerossl。
+# 参数:
+#   $1: 原始 CA 参数
+# 返回值: 标准化后的 CA 名称
+# =============================================================================
 function normalize_ca_server() {
     local ca_server="${1:-}"
     case "${ca_server,,}" in
@@ -150,11 +157,22 @@ function normalize_ca_server() {
     esac
 }
 
+# =============================================================================
+# 函数名称: get_config_ca_server
+# 功能描述: 从脚本配置读取 nginx.ca_server，并执行标准化。
+# 返回值: 标准化后的 CA 名称
+# =============================================================================
 function get_config_ca_server() {
     local config_ca_server="$(jq -r '.nginx.ca_server' "${SCRIPT_CONFIG_PATH}")"
     normalize_ca_server "${config_ca_server}"
 }
 
+# =============================================================================
+# 函数名称: resolve_ca_server
+# 功能描述: 解析当前生效 CA。
+#           优先使用命令行 --ca 显式值；否则回退到 config.json 的 nginx.ca_server。
+# 返回值: 无（更新全局变量 CA_SERVER）
+# =============================================================================
 function resolve_ca_server() {
     if [[ -z "${CA_SERVER}" ]]; then
         CA_SERVER="$(get_config_ca_server)"
@@ -162,6 +180,12 @@ function resolve_ca_server() {
     CA_SERVER="$(normalize_ca_server "${CA_SERVER}")"
 }
 
+# =============================================================================
+# 函数名称: set_default_ca
+# 功能描述: 显式设置 acme.sh 默认 CA（不触发签发动作）。
+#           供 handler 的事务切换在重签成功后调用，保证后续 cron/续签一致。
+# 返回值: 0-设置成功；非0-设置失败
+# =============================================================================
 function set_default_ca() {
     resolve_ca_server
     [[ -x "${HOME}/.acme.sh/acme.sh" ]] || print_error "$(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.set_ca.not_installed")"
@@ -309,6 +333,9 @@ EOF
     )
     if [[ "${CA_SERVER}" == 'zerossl' ]]; then
         issue_args+=(--ocsp)
+    fi
+    if [[ ${CA_SERVER_EXPLICIT} -eq 1 ]]; then
+        issue_args+=(--force)
     fi
 
     if [[ "${CA_SERVER}" == 'letsencrypt' ]]; then
@@ -538,7 +565,7 @@ function main() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
         # 匹配操作命令
-        --install | --update | --purge | --issue | --renew | --stop-renew | --check-cron | --status | --info)
+        --install | --update | --purge | --issue | --renew | --stop-renew | --check-cron | --status | --info | --set-ca)
             ACTION="${1#--}" # 提取操作名称
             ;;
         # 匹配域名选项
