@@ -1,5 +1,5 @@
 {
-  "version": "v2026.01.23",
+  "version": "v2026.03.01",
   "path": "",
   "language": "",
   "xray": {
@@ -32,6 +32,7 @@
   "nginx": {
     "version": "",
     "ca": "",
+    "ca_server": "zerossl",
     "domain": "",
     "cdn": "",
     "web": ""
