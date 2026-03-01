@@ -134,6 +134,14 @@ function exec_menu() {
 function exec_handler() {
     # 执行处理器脚本，并传递所有参数
     bash "${HANDLER_PATH}" "$@"
+    local exit_code=$?
+    if [[ ${exit_code} -ne 0 ]]; then
+        _error "$(echo "$I18N_DATA" | jq -r ".${CUR_FILE}.handler_failed")"
+    fi
+}
+
+function exec_read() {
+    bash "${CUR_DIR}/read.sh" "$@"
 }
 
 # =============================================================================
@@ -151,6 +159,7 @@ function exec_handler() {
 
 function processes_web_config() {
     local is_change="${1:-y}" # 获取 is_change 参数，默认为 'y'
+    local current_tag="$(jq -r '.xray.tag' "${SCRIPT_CONFIG_PATH}")"
     # 显示 Web 配置菜单
     exec_menu '--web'
     # 获取菜单选择的退出码 (代表用户选择)
@@ -167,12 +176,37 @@ function processes_web_config() {
         exec_handler '--web' "${web}"
     else
         # 如果 is_change 为 'n'，则执行完整安装流程
+        if [[ "${current_tag,,}" != 'sni' ]]; then
+            exec_handler '--sni-ports'
+        fi
         exec_handler '--script-config' 'SNI'  # 设置脚本配置为 SNI
         exec_handler '--install'              # 安装核心组件
         exec_handler '--nginx-install'        # 安装 Nginx
         exec_handler '--xray-config' "${web}" # 配置 Xray 使用选定的 web 类型
         exec_handler '--restart'              # 重启 Xray 服务
         exec_handler '--share'                # 显示分享链接
+    fi
+}
+
+function processes_ca_vendor() {
+    local apply_mode="${1:-preview}"
+    exec_menu '--ca'
+    local choose=$(echo $?)
+    local ca_server='zerossl'
+    local current_ca_server="$(jq -r '.nginx.ca_server' "${SCRIPT_CONFIG_PATH}")"
+    local switch_confirm='n'
+    case ${choose} in
+    2) ca_server='letsencrypt' ;;
+    *) ca_server='zerossl' ;;
+    esac
+    [[ -z "${current_ca_server}" || "${current_ca_server}" == 'null' ]] && current_ca_server='zerossl'
+
+    if [[ "${apply_mode}" != 'preview' ]]; then
+        if [[ "${apply_mode}" == 'switch' && "${ca_server}" != "${current_ca_server}" ]]; then
+            switch_confirm="$(exec_read '--switch-ca')"
+            [[ "${switch_confirm,,}" == 'y' ]] || return 0
+        fi
+        exec_handler '--ca-server' "${ca_server}"
     fi
 }
 
@@ -204,6 +238,7 @@ function processes_xray_config() {
     esac
     # 如果选择了 SNI 配置
     if [[ "${XTLS_CONFIG}" == 'SNI' ]]; then
+        processes_ca_vendor 'init'
         # 调用 processes_web_config 处理 SNI 特殊流程 (不执行完整安装)
         processes_web_config 'n'
     else
@@ -335,6 +370,7 @@ function processes_sni_config() {
     5) exec_handler '--nginx-cron' ;;             # 选择 5：配置 Nginx Cron 任务
     6) processes_web_config ;;                    # 选择 6：进入 Web 配置流程
     7) exec_handler '--v3-reset' ;;               # 选择 7：重置 V3 配置
+    8) processes_ca_vendor 'switch' ;;
     *) exit 0 ;;                                  # 其他情况：退出脚本
     esac
 }
