@@ -12,7 +12,8 @@
     "multiple_values": "Multiple values separated by commas"
   },
   "main": {
-    "not_support": "Current script configuration type is not SNI, this feature is not available"
+    "not_support": "Current script configuration type is not SNI, this feature is not available",
+    "handler_failed": "Operation failed; exited safely to avoid configuration or environment contamination"
   },
   "menu": {
     "choose": "Please choose an option",
@@ -80,6 +81,13 @@
       "info1": "Cloudreve v3 auto-generates admin account",
       "info2": "First registered user in Cloudreve v4 becomes admin"
     },
+    "ca_vendor": {
+      "title": "CA Vendor",
+      "option1": "ZeroSSL",
+      "option2": "Let's Encrypt",
+      "info1": "The script defaults to ZeroSSL as the CA server, which may sometimes cause certificate issuance to stay at: Pending, The CA is processing your order, please just wait.",
+      "info2": "Let's Encrypt no longer supports OCSP stapling, but this does not affect REALITY usage"
+    },
     "config_management": {
       "title": "Configuration Management",
       "option1": "Update Configuration",
@@ -120,8 +128,10 @@
       "option5": "Enable/Disable nginx auto-update",
       "option6": "Modify web config",
       "option7": "Reset Cloudreve v3 admin data",
+      "option8": "Switch CA vendor",
       "info1": "Domain for REALITY",
-      "info2": "Domain for CDN"
+      "info2": "Domain for CDN",
+      "info3": "Switching CA updates config and affects subsequent certificate issuance"
     }
   },
   "handler": {
@@ -142,6 +152,9 @@
     "nginx": {
       "close_cron": "Successfully stopped nginx auto-update task",
       "open_cron": "Successfully started nginx auto-update task"
+    },
+    "sni": {
+      "port_guard_fail": "SNI initialization stopped: required port check failed"
     }
   },
   "read": {
@@ -161,6 +174,7 @@
     "domain": "Enter website domain (for Reality): ",
     "cdn": "Enter website domain (for CDN): ",
     "email": "Enter email for ZeroSSL registration: ",
+    "switch_ca": "Switching CA requires re-issuing certificates, continue switching [y/N]: ",
     "short": "Enter shortId (comma separated, default auto-generated): ",
     "short_id_tip": "Supports input 0 to 8 to automatically generate shortId of corresponding length",
     "path": "Enter path (default auto-generated): ",
@@ -187,6 +201,22 @@
       "valid": "Port number is valid: ",
       "empty": "Input is empty, will be auto-configured",
       "range_error": "Port must be between 1-65535: "
+    },
+    "sni_ports": {
+      "start": "Running SNI required port checks (80/443)...",
+      "occupied_check": "Checking whether port is occupied: ",
+      "occupied_fail": "Port is occupied, cannot continue SNI setup: ",
+      "occupied_pass": "Port is not occupied: ",
+      "open_check": "Checking whether firewall allows TCP port: ",
+      "open_pass": "Firewall allows TCP port: ",
+      "open_fail": "Firewall does not allow TCP port: ",
+      "open_skip": "No active firewall policy detected, defaulting to open check pass: ",
+      "firewall_active": "Detected active firewall: ",
+      "allow_try": "Trying to auto-allow TCP port: ",
+      "allow_pass": "TCP port auto-allowed: ",
+      "allow_fail": "Failed to auto-allow TCP port: ",
+      "manual_allow": "Please manually allow the TCP port and retry (example: ufw allow <port>/tcp or firewall-cmd --permanent --add-port=<port>/tcp && firewall-cmd --reload): ",
+      "all_pass": "SNI required port checks passed"
     },
     "uuid": {
       "check": "Checking UUID type: ",
@@ -328,6 +358,9 @@
       "fail_reload_nginx": "Failed to reload Nginx, please check config file.",
       "fail_start_nginx": "Failed to start Nginx, please check config file.",
       "fail_first_attempt": "First attempt failed, trying again with debug mode...",
+      "zerossl_pending_switch": "ZeroSSL issuance failed with Pending (The CA is processing your order). Switched to Let's Encrypt and continuing certificate issuance.",
+      "letsencrypt_retry": "Let's Encrypt certificate attempt ${attempt}...",
+      "letsencrypt_fail": "Certificate issuance failed. Please check firewall and configuration.",
       "fail_ecc_issue": "ECC certificate application failed.",
       "fail_install_cert": "Failed to install certificate."
     },
@@ -339,6 +372,9 @@
       "start": "Stopping renewal of the specified SSL certificate...",
       "fail_cmd": "acme.sh stop renewal command failed.",
       "no_domain": "No domain specified, cannot stop renewal."
+    },
+    "set_ca": {
+      "not_installed": "acme.sh is not installed; cannot set default CA."
     },
     "check_cron": {
       "start": "Checking automatic renewal cron job settings..."
@@ -362,10 +398,12 @@
       "cmd_check_cron": "Check automatic renewal cron job settings",
       "cmd_info": "Display SSL certificate information",
       "cmd_status": "Check SSL certificate status",
+      "cmd_set_ca": "Set acme.sh default CA",
       "cmd_help": "Show this help message",
       "options_title": "Options",
       "opt_domain": "Specify domain",
-      "opt_email": "Specify acme.sh account email"
+      "opt_email": "Specify acme.sh account email",
+      "opt_ca": "Specify CA server (zerossl or letsencrypt)"
     }
   },
   "nginx": {
