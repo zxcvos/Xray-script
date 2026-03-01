@@ -140,6 +140,7 @@ declare -A param_map=(
     ["--domain"]="config,domain"
     ["--cdn"]="config,cdn"
     ["--email"]="config,email"
+    ["--switch-ca"]="config,switch_ca"
     ["--short"]="config,short"
     ["--path"]="config,path"
     ["--warp-ip"]="rule,warp_ip"
