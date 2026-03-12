@@ -73,6 +73,7 @@ declare TOOL_DIR=''      # 工具脚本目录 (动态设置)
 declare QUICK_INSTALL='' # 存储快速安装选项 (如 --vision, --xhttp)
 declare SCRIPT_CONFIG='' # 存储脚本配置内容
 declare LANG_PARAM=''    # 存储命令行指定的语言参数
+declare FORCE_CHECK_DEPS=0 # 是否强制检查/安装依赖 (0/1)
 
 # =============================================================================
 # 函数名称: _os
@@ -176,6 +177,9 @@ function parse_args() {
         --lang=*)
             LANG_PARAM="${1}"
             ;;
+        --check-deps)
+            FORCE_CHECK_DEPS=1
+            ;;
         esac
         shift # 移动到下一个参数
     done
@@ -193,7 +197,9 @@ function load_i18n() {
     # 如果存在脚本配置文件，则尝试从文件中获取语言代码
     if [[ -z "${lang}" && -f "${SCRIPT_CONFIG_PATH}" ]]; then
         # 尝试从脚本配置文件中获取语言代码
-        lang="$(jq -r '.language' "${SCRIPT_CONFIG_PATH}")"
+        if cmd_exists "jq"; then
+            lang="$(jq -r '.language' "${SCRIPT_CONFIG_PATH}" 2>/dev/null)"
+        fi
     fi
 
     # 如果语言设置为 "auto"，则使用系统环境变量 LANG 的第一部分作为语言代码
@@ -491,19 +497,29 @@ function main() {
     # 检查操作系统
     check_os
 
-    # 检查依赖，如果缺失则安装
-    if ! check_dependencies; then
-        install_dependencies
+    local is_first_run=0
+    if [[ ! -f "${SCRIPT_CONFIG_PATH}" ]]; then
+        is_first_run=1
     fi
 
-    # 再次检查依赖 (安装后)
-    if ! check_dependencies; then
-        install_dependencies
+    # 仅首次运行或显式强制时检查/安装依赖
+    if [[ "${is_first_run}" -eq 1 || "${FORCE_CHECK_DEPS}" -eq 1 ]]; then
+        # 检查依赖，如果缺失则安装
+        if ! check_dependencies; then
+            install_dependencies
+        fi
+
+        # 再次检查依赖 (安装后)
+        if ! check_dependencies; then
+            install_dependencies
+        fi
     fi
 
     # 检查脚本配置目录和配置文件是否存在，如果不存在则创建并下载默认配置
-    if [[ ! -d "${SCRIPT_CONFIG_DIR}" && ! -f "${SCRIPT_CONFIG_PATH}" ]]; then
+    if [[ ! -d "${SCRIPT_CONFIG_DIR}" ]]; then
         mkdir -p "${SCRIPT_CONFIG_DIR}"
+    fi
+    if [[ ! -f "${SCRIPT_CONFIG_PATH}" ]]; then
         wget -O "${SCRIPT_CONFIG_PATH}" https://raw.githubusercontent.com/zxcvos/Xray-script/main/config.json
     fi
 
